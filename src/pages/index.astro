@@ -2,15 +2,116 @@
 
 ---
 
-<html lang="en">
+<html lang="ja">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
+		<title>VRChat Worlds Dashboard</title>
+		<style>
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				margin: 0;
+				padding: 0;
+				min-height: 100vh;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+			
+			.login-container {
+				background: white;
+				padding: 2rem;
+				border-radius: 12px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+				width: 100%;
+				max-width: 400px;
+				text-align: center;
+			}
+			
+			h1 {
+				color: #333;
+				margin-bottom: 1.5rem;
+				font-size: 1.8rem;
+			}
+			
+			.input-group {
+				margin-bottom: 1.5rem;
+				text-align: left;
+			}
+			
+			label {
+				display: block;
+				margin-bottom: 0.5rem;
+				color: #555;
+				font-weight: 500;
+			}
+			
+			input[type="text"] {
+				width: 100%;
+				padding: 0.75rem;
+				border: 2px solid #ddd;
+				border-radius: 6px;
+				font-size: 1rem;
+				transition: border-color 0.3s ease;
+				box-sizing: border-box;
+			}
+			
+			input[type="text"]:focus {
+				outline: none;
+				border-color: #667eea;
+			}
+			
+			.login-button {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				border: none;
+				padding: 0.75rem 2rem;
+				font-size: 1rem;
+				font-weight: 600;
+				border-radius: 6px;
+				cursor: pointer;
+				transition: transform 0.2s ease, box-shadow 0.2s ease;
+				width: 100%;
+			}
+			
+			.login-button:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+			}
+			
+			.login-button:disabled {
+				opacity: 0.6;
+				cursor: not-allowed;
+				transform: none;
+				box-shadow: none;
+			}
+		</style>
 	</head>
 	<body>
-		<h1>Astro</h1>
+		<div class="login-container">
+			<h1>VRChat Worlds Dashboard</h1>
+			<form id="loginForm">
+				<div class="input-group">
+					<label for="userId">ユーザID</label>
+					<input type="text" id="userId" name="userId" required placeholder="ユーザIDを入力してください" />
+				</div>
+				<button type="submit" class="login-button">ログイン</button>
+			</form>
+		</div>
+		
+		<script>
+			document.getElementById('loginForm').addEventListener('submit', function(e) {
+				e.preventDefault();
+				const userId = document.getElementById('userId').value.trim();
+				
+				if (userId) {
+					localStorage.setItem('userId', userId);
+					window.location.href = '/dashboard';
+				}
+			});
+		</script>
 	</body>
 </html>
