@@ -3,12 +3,17 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "dev": "cp astro.config.dev.mjs astro.config.mjs && astro dev",
+    "build": "cp astro.config.prod.mjs astro.config.mjs && astro build",
+    "build:dev": "cp astro.config.dev.mjs astro.config.mjs && astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name=wwms"
   },
   "dependencies": {
-    "astro": "^5.10.1"
+    "@astrojs/cloudflare": "^12.1.0",
+    "@astrojs/svelte": "^7.1.0",
+    "astro": "^5.10.1",
+    "svelte": "^5.34.8"
   }
 }
