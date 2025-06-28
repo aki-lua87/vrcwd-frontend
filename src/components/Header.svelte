@@ -1,9 +1,35 @@
 <script>
+	import { CognitoAuthService } from '../lib/cognito-auth.ts';
+	
 	export let userId = '';
 	
-	function logout() {
-		localStorage.removeItem("userId");
-		window.location.href = "/";
+	async function logout() {
+		try {
+			// Check for legacy userId first
+			const storedUserId = localStorage.getItem("userId");
+			if (storedUserId) {
+				localStorage.removeItem("userId");
+				window.location.href = "/";
+				return;
+			}
+
+			// Cognito logout
+			const cognitoConfig = {
+				region: import.meta.env.COGNITO_REGION || 'us-east-1',
+				userPoolId: import.meta.env.COGNITO_USER_POOL_ID || '',
+				clientId: import.meta.env.COGNITO_CLIENT_ID || '',
+			};
+
+			const authService = new CognitoAuthService(cognitoConfig);
+			await authService.signOut();
+			
+			window.location.href = "/login";
+		} catch (error) {
+			console.error('Logout error:', error);
+			// Force logout by clearing local storage and redirecting
+			localStorage.clear();
+			window.location.href = "/login";
+		}
 	}
 </script>
 

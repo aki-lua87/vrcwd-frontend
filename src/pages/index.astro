@@ -103,15 +103,20 @@
 		</div>
 		
 		<script>
-			document.getElementById('loginForm').addEventListener('submit', function(e) {
-				e.preventDefault();
-				const userId = document.getElementById('userId').value.trim();
-				
-				if (userId) {
-					localStorage.setItem('userId', userId);
-					window.location.href = '/dashboard';
-				}
-			});
+			const loginForm = document.getElementById('loginForm');
+			const userIdInput = document.getElementById('userId') as HTMLInputElement;
+			
+			if (loginForm && userIdInput) {
+				loginForm.addEventListener('submit', function(e) {
+					e.preventDefault();
+					const userId = userIdInput.value.trim();
+					
+					if (userId) {
+						localStorage.setItem('userId', userId);
+						window.location.href = '/dashboard';
+					}
+				});
+			}
 		</script>
 	</body>
 </html>

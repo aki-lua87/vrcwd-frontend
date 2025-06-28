@@ -1,12 +1,16 @@
 <script>
 	import { onMount } from 'svelte';
-	import Header from './Header.svelte';
+	import { CognitoAuthService } from '../lib/cognito-auth.ts';
+	import SharedHeader from './SharedHeader.svelte';
 	import FolderSidebar from './FolderSidebar.svelte';
 	import FolderTitle from './FolderTitle.svelte';
 	import Stats from './Stats.svelte';
 	import WorldInput from './WorldInput.svelte';
 	import WorldsGrid from './WorldsGrid.svelte';
 	import Pagination from './Pagination.svelte';
+	import WorldDetailsModal from './WorldDetailsModal.svelte';
+	import FolderModal from './FolderModal.svelte';
+	import ShareModal from './ShareModal.svelte';
 	
 	// Application state
 	let folders = [];
@@ -20,6 +24,17 @@
 	let loading = true;
 	let error = '';
 	let success = '';
+	
+	// World details modal state
+	let showWorldDetailsModal = false;
+	let selectedWorldData = null;
+	
+	// Folder modal state
+	let showFolderModal = false;
+	let editingFolder = null;
+	
+	// Share modal state
+	let showShareModal = false;
 	
 	// Configuration
 	const CONFIG = {
@@ -251,23 +266,25 @@
 		}
 	}
 	
-	function handleSelectFolder(event) {
-		const folderId = event.detail.folderId;
+	function handleSelectFolder(data) {
+		const folderId = data.folderId;
 		const folder = folders.find(f => f.id == folderId);
 		currentFolder = folder;
 		loadWorldsForCurrentFolder();
 	}
 	
 	function handleCreateFolder() {
-		showError("フォルダー作成機能は未実装です。");
+		editingFolder = null;
+		showFolderModal = true;
 	}
 	
-	function handleEditFolder(event) {
-		showError("フォルダー編集機能は未実装です。");
+	function handleEditFolder(data) {
+		editingFolder = data.folder;
+		showFolderModal = true;
 	}
 	
-	async function handleDeleteFolder(event) {
-		const folderId = event.detail.folderId;
+	async function handleDeleteFolder(data) {
+		const folderId = data.folderId;
 		if (confirm("このフォルダーとその中のすべてのワールドを削除しますか？")) {
 			try {
 				await apiService.deleteFolder(userId, folderId);
@@ -280,8 +297,8 @@
 		}
 	}
 	
-	async function handleAddWorld(event) {
-		const inputValue = event.detail.worldInput;
+	async function handleAddWorld(data) {
+		const inputValue = data.worldInput;
 		const worldId = extractWorldIdFromInput(inputValue);
 		
 		if (!worldId) {
@@ -319,8 +336,8 @@
 		}
 	}
 	
-	async function handleSaveComment(event) {
-		const { worldId, comment } = event.detail;
+	async function handleSaveComment(data) {
+		const { worldId, comment } = data;
 		
 		try {
 			await apiService.updateWorldComment(userId, currentFolder.id, worldId, comment);
@@ -339,8 +356,8 @@
 		}
 	}
 	
-	async function handleRemoveFromFolder(event) {
-		const { worldId } = event.detail;
+	async function handleRemoveFromFolder(data) {
+		const { worldId } = data;
 		
 		if (confirm("このワールドをフォルダーから削除しますか？")) {
 			try {
@@ -354,46 +371,159 @@
 		}
 	}
 	
-	function handleOpenWorldDetails(event) {
-		const { worldId } = event.detail;
-		showError("ワールド詳細表示機能は未実装です。");
+	function handleOpenWorldDetails(data) {
+		const { worldId } = data;
+		const worldData = allWorldsData.find(w => w.world_id === worldId);
+		if (worldData) {
+			selectedWorldData = worldData;
+			showWorldDetailsModal = true;
+		} else {
+			showError("ワールドデータが見つかりません。");
+		}
 	}
 	
-	function handlePageChange(event) {
-		const { page } = event.detail;
+	function handlePageChange(data) {
+		const { page } = data;
 		setCurrentPage(page);
 	}
 	
+	function handleCloseWorldDetails() {
+		showWorldDetailsModal = false;
+		selectedWorldData = null;
+	}
+	
+	async function handleAddToFolderFromModal(data) {
+		const { folderId, worldId, comment } = data;
+		
+		try {
+			await apiService.addWorldToFolder(userId, folderId, {
+				world_id: worldId,
+				comment: comment
+			});
+			
+			showSuccess('ワールドをフォルダーに追加しました。');
+			
+			// Update main dashboard if the folder is currently selected
+			if (currentFolder && currentFolder.id == folderId) {
+				await loadWorldsForCurrentFolder();
+			}
+		} catch (err) {
+			console.error('Error adding to folder:', err);
+			showError('フォルダーへの追加に失敗しました。');
+		}
+	}
+	
+	async function handleRemoveFromFolderFromModal(data) {
+		const { folderId, worldId } = data;
+		
+		try {
+			await apiService.removeWorldFromFolder(userId, folderId, worldId);
+			showSuccess('フォルダーからワールドを削除しました。');
+			
+			// Update main dashboard if the folder is currently selected
+			if (currentFolder && currentFolder.id == folderId) {
+				await loadWorldsForCurrentFolder();
+			}
+		} catch (err) {
+			console.error('Error removing from folder:', err);
+			showError('フォルダーからの削除に失敗しました。');
+		}
+	}
+	
+	function handleCloseFolderModal() {
+		showFolderModal = false;
+		editingFolder = null;
+	}
+	
+	async function handleSaveFolder(data) {
+		const { folderData, isEditing, folderId } = data;
+		
+		try {
+			if (isEditing) {
+				await apiService.updateFolder(userId, folderId, folderData);
+				showSuccess("フォルダーを更新しました。");
+			} else {
+				await apiService.createFolder(userId, folderData);
+				showSuccess("フォルダーを作成しました。");
+			}
+			
+			// Reload data to reflect changes
+			await loadData();
+		} catch (err) {
+			console.error("Error saving folder:", err);
+			showError("フォルダーの保存に失敗しました。");
+		}
+	}
+	
+	function handleShareFolder(data) {
+		if (data.folder && data.userId) {
+			showShareModal = true;
+		}
+	}
+	
+	function handleCloseShareModal() {
+		showShareModal = false;
+	}
+	
 	// Initialize on mount
-	onMount(() => {
+	onMount(async () => {
+		// Check for legacy userId first (backward compatibility)
 		const storedUserId = localStorage.getItem("userId");
-		if (!storedUserId) {
-			window.location.href = "/";
+		if (storedUserId) {
+			userId = storedUserId;
+			loadData();
 			return;
 		}
-		
-		userId = storedUserId;
-		loadData();
+
+		// Check Cognito authentication
+		try {
+			const cognitoConfig = {
+				region: import.meta.env.COGNITO_REGION || 'us-east-1',
+				userPoolId: import.meta.env.COGNITO_USER_POOL_ID || '',
+				clientId: import.meta.env.COGNITO_CLIENT_ID || '',
+			};
+
+			const authService = new CognitoAuthService(cognitoConfig);
+			
+			if (!authService.isAuthenticated()) {
+				window.location.href = "/login";
+				return;
+			}
+
+			const userInfo = await authService.getCurrentUser();
+			if (!userInfo) {
+				window.location.href = "/login";
+				return;
+			}
+
+			userId = userInfo.username;
+			loadData();
+		} catch (error) {
+			console.error('Authentication check failed:', error);
+			window.location.href = "/login";
+		}
 	});
 </script>
 
 <div class="dashboard">
-	<Header {userId} />
+	<SharedHeader />
 	
 	<FolderTitle 
 		{currentFolder}
-		on:editFolder={handleEditFolder}
-		on:deleteFolder={handleDeleteFolder}
+		{userId}
+		oneditFolder={handleEditFolder}
+		ondeleteFolder={handleDeleteFolder}
+		onshareFolder={handleShareFolder}
 	/>
 	
 	<div class="main-container">
 		<FolderSidebar 
 			{folders}
 			{currentFolder}
-			on:selectFolder={handleSelectFolder}
-			on:createFolder={handleCreateFolder}
-			on:editFolder={handleEditFolder}
-			on:deleteFolder={handleDeleteFolder}
+			onselectFolder={handleSelectFolder}
+			oncreateFolder={handleCreateFolder}
+			oneditFolder={handleEditFolder}
+			ondeleteFolder={handleDeleteFolder}
 		/>
 		
 		<div class="main-content">
@@ -410,25 +540,52 @@
 				
 				<WorldInput 
 					disabled={!currentFolder}
-					on:addWorld={handleAddWorld}
+					onaddWorld={handleAddWorld}
 				/>
 				
 				<WorldsGrid 
 					{worldsData}
-					on:openWorldDetails={handleOpenWorldDetails}
-					on:saveComment={handleSaveComment}
-					on:removeFromFolder={handleRemoveFromFolder}
+					onopenWorldDetails={handleOpenWorldDetails}
+					onsaveComment={handleSaveComment}
+					onremoveFromFolder={handleRemoveFromFolder}
 				/>
 				
 				<Pagination 
 					{currentPage}
 					{totalPages}
 					{totalCount}
-					on:pageChange={handlePageChange}
+					onpageChange={handlePageChange}
 				/>
 			{/if}
 		</div>
 	</div>
+	
+	<!-- World Details Modal -->
+	<WorldDetailsModal
+		isVisible={showWorldDetailsModal}
+		worldData={selectedWorldData}
+		{folders}
+		{userId}
+		onclose={handleCloseWorldDetails}
+		onaddToFolder={handleAddToFolderFromModal}
+		onremoveFromFolder={handleRemoveFromFolderFromModal}
+	/>
+	
+	<!-- Folder Modal -->
+	<FolderModal
+		isVisible={showFolderModal}
+		{editingFolder}
+		onclose={handleCloseFolderModal}
+		onsave={handleSaveFolder}
+	/>
+	
+	<!-- Share Modal -->
+	<ShareModal
+		isVisible={showShareModal}
+		folderData={currentFolder}
+		{userId}
+		onclose={handleCloseShareModal}
+	/>
 </div>
 
 <style>

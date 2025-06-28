@@ -1,0 +1,33 @@
+---
+import CognitoLogin from '../components/CognitoLogin.svelte';
+
+// Environment variables for Cognito configuration
+const cognitoConfig = {
+  region: import.meta.env.COGNITO_REGION || 'us-east-1',
+  userPoolId: import.meta.env.COGNITO_USER_POOL_ID || '',
+  clientId: import.meta.env.COGNITO_CLIENT_ID || '',
+};
+
+// Note: In static build mode, environment variables might not be available
+// The actual validation will happen in the client-side component
+---
+
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>ログイン - VRChat Worlds Dashboard</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <CognitoLogin cognitoConfig={cognitoConfig} client:load />
+  </body>
+</html>

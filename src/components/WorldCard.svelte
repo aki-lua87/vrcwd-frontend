@@ -1,15 +1,17 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-	
 	export let world;
+	export let readonly = false; // Read-only mode for public viewing
 	
-	const dispatch = createEventDispatcher();
+	// Svelte 5 event props
+	export let onopenWorldDetails = () => {};
+	export let onsaveComment = () => {};
+	export let onremoveFromFolder = () => {};
 	
 	let isEditingComment = false;
 	let commentInput = world.comment || '';
 	
 	function openWorldDetails() {
-		dispatch('openWorldDetails', { worldId: world.world_id });
+		onopenWorldDetails({ worldId: world.world_id });
 	}
 	
 	function toggleCommentEdit() {
@@ -25,7 +27,7 @@
 	}
 	
 	async function saveComment() {
-		dispatch('saveComment', { 
+		onsaveComment({ 
 			worldId: world.world_id, 
 			comment: commentInput.trim() 
 		});
@@ -33,7 +35,7 @@
 	}
 	
 	function removeFromFolder() {
-		dispatch('removeFromFolder', { worldId: world.world_id });
+		onremoveFromFolder({ worldId: world.world_id });
 	}
 	
 	function handleImageError(event) {
@@ -93,14 +95,16 @@
 				</div>
 			{/if}
 			
-			<div class="comment-buttons">
-				<button class="btn-edit" on:click={toggleCommentEdit}>
-					✏️ コメントを編集
-				</button>
-				<button class="btn-delete" on:click={removeFromFolder}>
-					🗑️ フォルダから削除
-				</button>
-			</div>
+			{#if !readonly}
+				<div class="comment-buttons">
+					<button class="btn-edit" on:click={toggleCommentEdit}>
+						✏️ コメントを編集
+					</button>
+					<button class="btn-delete" on:click={removeFromFolder}>
+						🗑️ フォルダから削除
+					</button>
+				</div>
+			{/if}
 		</div>
 	</div>
 </div>

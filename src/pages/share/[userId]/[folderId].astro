@@ -1,0 +1,49 @@
+---
+import PublicFolderView from '../../../components/PublicFolderView.svelte';
+
+// This is a server-rendered dynamic route
+export const prerender = false;
+
+// Get URL parameters
+const { userId, folderId } = Astro.params;
+
+// Validate parameters
+if (!userId || !folderId) {
+  return new Response('Invalid URL parameters', { status: 400 });
+}
+---
+
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>共有フォルダー - VRChat Worlds Dashboard</title>
+    
+    <!-- OG Tags for better sharing -->
+    <meta property="og:title" content="VRChat Worlds - 共有フォルダー" />
+    <meta property="og:description" content={`${userId}さんのVRChatワールドコレクションを見る`} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={Astro.url.href} />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="VRChat Worlds - 共有フォルダー" />
+    <meta name="twitter:description" content={`${userId}さんのVRChatワールドコレクションを見る`} />
+    
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <PublicFolderView 
+      userId={userId} 
+      folderId={folderId} 
+      client:load 
+    />
+  </body>
+</html>

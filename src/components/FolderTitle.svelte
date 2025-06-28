@@ -1,19 +1,30 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-	
 	export let currentFolder = null;
+	export let userId = '';
 	
-	const dispatch = createEventDispatcher();
+	// Svelte 5 event props
+	export let oneditFolder = () => {};
+	export let ondeleteFolder = () => {};
+	export let onshareFolder = () => {};
 	
 	function editFolder() {
 		if (currentFolder) {
-			dispatch('editFolder', { folder: currentFolder });
+			oneditFolder({ folder: currentFolder });
 		}
 	}
 	
 	function deleteFolder() {
 		if (currentFolder) {
-			dispatch('deleteFolder', { folderId: currentFolder.id });
+			ondeleteFolder({ folderId: currentFolder.id });
+		}
+	}
+	
+	function shareFolder() {
+		if (currentFolder && userId) {
+			onshareFolder({ 
+				folder: currentFolder, 
+				userId: userId 
+			});
 		}
 	}
 </script>
@@ -30,6 +41,9 @@
 		</div>
 		{#if currentFolder}
 			<div class="folder-actions">
+				<button class="btn btn-small btn-share" on:click={shareFolder}>
+					🔗 共有
+				</button>
 				<button class="btn btn-small btn-secondary" on:click={editFolder}>
 					✏️ 編集
 				</button>
@@ -121,5 +135,14 @@
 
 	.btn-danger:hover {
 		background: #a02622;
+	}
+
+	.btn-share {
+		background: #28a745;
+		color: white;
+	}
+
+	.btn-share:hover {
+		background: #218838;
 	}
 </style>

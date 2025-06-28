@@ -1,25 +1,27 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-	
 	export let folders = [];
 	export let currentFolder = null;
 	
-	const dispatch = createEventDispatcher();
+	// Svelte 5 event props
+	export let onselectFolder = () => {};
+	export let oncreateFolder = () => {};
+	export let oneditFolder = () => {};
+	export let ondeleteFolder = () => {};
 	
 	function selectFolder(folderId) {
-		dispatch('selectFolder', { folderId });
+		onselectFolder({ folderId });
 	}
 	
 	function createFolder() {
-		dispatch('createFolder');
+		oncreateFolder();
 	}
 	
 	function editFolder(folder) {
-		dispatch('editFolder', { folder });
+		oneditFolder({ folder });
 	}
 	
 	function deleteFolder(folderId) {
-		dispatch('deleteFolder', { folderId });
+		ondeleteFolder({ folderId });
 	}
 </script>
 

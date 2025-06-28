@@ -1,15 +1,14 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-	
 	export let disabled = false;
 	
-	const dispatch = createEventDispatcher();
+	// Svelte 5 event props
+	export let onaddWorld = () => {};
 	
 	let worldIdInput = '';
 	
 	function addWorld() {
 		if (worldIdInput.trim()) {
-			dispatch('addWorld', { worldInput: worldIdInput.trim() });
+			onaddWorld({ worldInput: worldIdInput.trim() });
 			worldIdInput = '';
 		}
 	}

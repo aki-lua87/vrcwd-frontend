@@ -1,22 +1,12 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import WorldCard from './WorldCard.svelte';
 	
 	export let worldsData = [];
 	
-	const dispatch = createEventDispatcher();
-	
-	function handleOpenWorldDetails(event) {
-		dispatch('openWorldDetails', event.detail);
-	}
-	
-	function handleSaveComment(event) {
-		dispatch('saveComment', event.detail);
-	}
-	
-	function handleRemoveFromFolder(event) {
-		dispatch('removeFromFolder', event.detail);
-	}
+	// Svelte 5 event props
+	export let onopenWorldDetails = () => {};
+	export let onsaveComment = () => {};
+	export let onremoveFromFolder = () => {};
 </script>
 
 <div class="worlds-grid">
@@ -28,9 +18,9 @@
 		{#each worldsData as world (world.world_id)}
 			<WorldCard 
 				{world}
-				on:openWorldDetails={handleOpenWorldDetails}
-				on:saveComment={handleSaveComment}
-				on:removeFromFolder={handleRemoveFromFolder}
+				{onopenWorldDetails}
+				{onsaveComment}
+				{onremoveFromFolder}
 			/>
 		{/each}
 	{/if}

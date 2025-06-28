@@ -1,21 +1,20 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-	
 	export let currentPage = 1;
 	export let totalPages = 1;
 	export let totalCount = 0;
 	
-	const dispatch = createEventDispatcher();
+	// Svelte 5 event props
+	export let onpageChange = () => {};
 	
 	function previousPage() {
 		if (currentPage > 1) {
-			dispatch('pageChange', { page: currentPage - 1 });
+			onpageChange({ page: currentPage - 1 });
 		}
 	}
 	
 	function nextPage() {
 		if (currentPage < totalPages) {
-			dispatch('pageChange', { page: currentPage + 1 });
+			onpageChange({ page: currentPage + 1 });
 		}
 	}
 	
