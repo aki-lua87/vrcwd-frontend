@@ -24,6 +24,11 @@
 	let loading = true;
 	let error = '';
 	let success = '';
+	let searchQuery = '';
+	let clearSearchFlag = false;
+	
+	// Ensure filteredWorldsData is initialized
+	let filteredWorldsData = [];
 	
 	// World details modal state
 	let showWorldDetailsModal = false;
@@ -168,17 +173,71 @@
 	const apiService = new ApiService(CONFIG.API_BASE_URL);
 	
 	// Helper functions
+	function filterWorldsData() {
+		console.log('filterWorldsData called with searchQuery:', searchQuery);
+		console.log('allWorldsData length:', allWorldsData.length);
+		
+		if (!searchQuery || !searchQuery.trim()) {
+			filteredWorldsData = allWorldsData;
+			console.log('No search query, using all data');
+		} else {
+			const query = searchQuery.toLowerCase().trim();
+			console.log('Filtering with query:', query);
+			
+			filteredWorldsData = allWorldsData.filter(world => {
+				// ワールド名での検索
+				const worldName = world.world_name?.toLowerCase() || '';
+				// 作者名での検索
+				const authorName = world.world_author_name?.toLowerCase() || '';
+				// 説明での検索
+				const description = world.world_description?.toLowerCase() || '';
+				
+				const matches = worldName.includes(query) || 
+				               authorName.includes(query) || 
+				               description.includes(query);
+				
+				if (matches) {
+					console.log('Match found:', world.world_name, 'by', world.world_author_name);
+				}
+				
+				return matches;
+			});
+			
+			console.log('Filtered results count:', filteredWorldsData.length);
+		}
+		
+		console.log('Before update - totalCount:', totalCount, 'totalPages:', totalPages, 'currentPage:', currentPage);
+		
+		totalCount = filteredWorldsData.length;
+		totalPages = Math.ceil(filteredWorldsData.length / CONFIG.PAGE_SIZE);
+		
+		// Reset to first page when search changes
+		if (currentPage > totalPages && totalPages > 0) {
+			currentPage = 1;
+		} else if (totalPages === 0) {
+			currentPage = 1;
+		}
+		
+		console.log('After update - totalCount:', totalCount, 'totalPages:', totalPages, 'currentPage:', currentPage);
+		
+		updateCurrentPageData();
+		console.log('worldsData after update:', worldsData.length);
+	}
+	
 	function updateCurrentPageData() {
 		const startIndex = (currentPage - 1) * CONFIG.PAGE_SIZE;
 		const endIndex = startIndex + CONFIG.PAGE_SIZE;
-		worldsData = allWorldsData.slice(startIndex, endIndex);
+		worldsData = filteredWorldsData.slice(startIndex, endIndex);
+		console.log('updateCurrentPageData: startIndex:', startIndex, 'endIndex:', endIndex);
+		console.log('updateCurrentPageData: filteredWorldsData.length:', filteredWorldsData.length);
+		console.log('updateCurrentPageData: worldsData.length:', worldsData.length);
+		// Force reactivity update
+		worldsData = [...worldsData];
 	}
 	
 	function setWorldsData(data) {
 		allWorldsData = data;
-		totalCount = data.length;
-		totalPages = Math.ceil(data.length / CONFIG.PAGE_SIZE);
-		updateCurrentPageData();
+		filterWorldsData();
 	}
 	
 	function setCurrentPage(page) {
@@ -259,6 +318,8 @@
 
 			const worldsDataResult = await apiService.fetchFolderItems(userId, currentFolder.id);
 			resetPagination();
+			searchQuery = ''; // Reset search query when changing folders
+			clearSearchFlag = !clearSearchFlag; // Toggle to trigger SearchBox reset
 			setWorldsData(worldsDataResult);
 		} catch (err) {
 			console.error("Error loading worlds:", err);
@@ -385,6 +446,21 @@
 	function handlePageChange(data) {
 		const { page } = data;
 		setCurrentPage(page);
+	}
+	
+	function handleSearch(event) {
+		console.log('handleSearch called with event:', event);
+		console.log('event.detail:', event.detail);
+		
+		const query = event.detail?.query || '';
+		searchQuery = query;
+		console.log('Search query:', searchQuery);
+		console.log('All worlds data:', allWorldsData.length);
+		if (allWorldsData.length > 0) {
+			console.log('Sample world data:', allWorldsData[0]);
+		}
+		filterWorldsData();
+		console.log('Filtered worlds data:', filteredWorldsData.length);
 	}
 	
 	function handleCloseWorldDetails() {
@@ -536,11 +612,16 @@
 					<div class="success">{success}</div>
 				{/if}
 				
-				<Stats totalWorlds={totalCount} />
-				
 				<WorldInput 
 					disabled={!currentFolder}
 					onaddWorld={handleAddWorld}
+				/>
+				
+				<Stats 
+					totalWorlds={totalCount}
+					disabled={!currentFolder}
+					clearSearch={clearSearchFlag}
+					on:search={handleSearch}
 				/>
 				
 				<WorldsGrid 

@@ -1,20 +1,20 @@
 <script>
 	export let disabled = false;
-	
+
 	// Svelte 5 event props
 	export let onaddWorld = () => {};
-	
-	let worldIdInput = '';
-	
+
+	let worldIdInput = "";
+
 	function addWorld() {
 		if (worldIdInput.trim()) {
 			onaddWorld({ worldInput: worldIdInput.trim() });
-			worldIdInput = '';
+			worldIdInput = "";
 		}
 	}
-	
+
 	function handleKeypress(event) {
-		if (event.key === 'Enter') {
+		if (event.key === "Enter") {
 			addWorld();
 		}
 	}
@@ -25,15 +25,11 @@
 		type="text"
 		bind:value={worldIdInput}
 		class="world-input"
-		placeholder="ワールドID (wrld_...) またはVRChatのURLを入力してください"
+		placeholder="ワールドを追加するにはワールドID (wrld_...) またはURLを入力してください"
 		on:keypress={handleKeypress}
 		{disabled}
 	/>
-	<button 
-		class="btn btn-primary" 
-		on:click={addWorld}
-		{disabled}
-	>
+	<button class="btn btn-primary" on:click={addWorld} {disabled}>
 		ワールド追加
 	</button>
 </div>
