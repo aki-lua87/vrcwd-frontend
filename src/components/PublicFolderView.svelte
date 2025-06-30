@@ -15,7 +15,7 @@
 	let totalCount = 0;
 	
 	const CONFIG = {
-		API_BASE_URL: "http://localhost:8787",
+		API_BASE_URL: import.meta.env.PUBLIC_API_BASE_URL || "http://localhost:8787",
 		PAGE_SIZE: 12,
 	};
 	
@@ -26,7 +26,8 @@
 		}
 		
 		async fetchPublicFolderItems(userId, folderId) {
-			const url = `${this.baseUrl}/v2/u/${userId}/folders/${folderId}/items`;
+			const formattedId = String(folderId).padStart(8, '0');
+			const url = `${this.baseUrl}/v2/u/${userId}/folders/${formattedId}/items`;
 			const response = await fetch(url);
 			if (!response.ok) {
 				if (response.status === 404) {

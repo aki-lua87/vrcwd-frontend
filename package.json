@@ -8,7 +8,7 @@
     "build:dev": "cp astro.config.dev.mjs astro.config.mjs && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name=wwms"
+    "deploy": "pnpm run build && wrangler pages deploy dist --project-name=wwms"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.1.0",

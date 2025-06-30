@@ -22,18 +22,15 @@
 			}
 
 			// Check Cognito authentication
-			const cognitoConfig = {
-				region: import.meta.env.COGNITO_REGION || 'us-east-1',
-				userPoolId: import.meta.env.COGNITO_USER_POOL_ID || '',
-				clientId: import.meta.env.COGNITO_CLIENT_ID || '',
-			};
-
-			if (cognitoConfig.userPoolId && cognitoConfig.clientId) {
-				const authService = new CognitoAuthService(cognitoConfig);
-				const user = await authService.getCurrentUser();
-				if (user) {
+			const idToken = localStorage.getItem('idToken');
+			const userEmail = localStorage.getItem('userEmail');
+			
+			if (idToken && userEmail) {
+				// Verify token is not expired
+				const tokenPayload = JSON.parse(atob(idToken.split('.')[1]));
+				if (tokenPayload.exp * 1000 > Date.now()) {
 					isLoggedIn = true;
-					currentUserId = user.username;
+					currentUserId = userEmail;
 				}
 			}
 		} catch (error) {
@@ -51,6 +48,10 @@
 		window.location.href = "/login";
 	}
 	
+	function goToSettings() {
+		window.location.href = "/settings";
+	}
+	
 	async function logout() {
 		try {
 			// Check for legacy userId first
@@ -61,22 +62,18 @@
 				return;
 			}
 
-			// Cognito logout
-			const cognitoConfig = {
-				region: import.meta.env.COGNITO_REGION || 'us-east-1',
-				userPoolId: import.meta.env.COGNITO_USER_POOL_ID || '',
-				clientId: import.meta.env.COGNITO_CLIENT_ID || '',
-			};
-
-			const authService = new CognitoAuthService(cognitoConfig);
-			await authService.signOut();
+			// Cognito logout - just clear tokens
+			localStorage.removeItem('idToken');
+			localStorage.removeItem('accessToken');
+			localStorage.removeItem('refreshToken');
+			localStorage.removeItem('userEmail');
 			
-			window.location.href = "/login";
+			window.location.href = "/";
 		} catch (error) {
 			console.error('Logout error:', error);
 			// Force logout by clearing local storage and redirecting
 			localStorage.clear();
-			window.location.href = "/login";
+			window.location.href = "/";
 		}
 	}
 	
@@ -93,6 +90,7 @@
 				{#if !isDashboardPage}
 					<button class="nav-btn" on:click={goToDashboard}>ダッシュボード</button>
 				{/if}
+				<button class="nav-btn" on:click={goToSettings}>設定</button>
 				<button class="nav-btn logout-btn" on:click={logout}>ログアウト</button>
 			{:else}
 				<button class="nav-btn" on:click={goToLogin}>ログイン</button>

@@ -20,10 +20,17 @@
 	async function loadWorldFolderStatus() {
 		worldInFolders.clear();
 		
+		const authToken = localStorage.getItem('idToken') || 'legacy';
+		
 		const apiService = {
-			async fetchFolderItems(userId, folderId) {
-				const url = `http://localhost:8787/v2/u/${userId}/folders/${folderId}/items`;
-				const response = await fetch(url);
+			async fetchFolderItems(token, folderId) {
+				const formattedId = String(folderId).padStart(8, '0');
+				const url = `${import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:8787'}/v2/folders/${formattedId}/items`;
+				const response = await fetch(url, {
+					headers: {
+						'Authorization': `Bearer ${token}`
+					}
+				});
 				if (!response.ok) {
 					throw new Error(`HTTP error! status: ${response.status}`);
 				}
@@ -33,7 +40,7 @@
 		
 		for (const folder of folders) {
 			try {
-				const items = await apiService.fetchFolderItems(userId, folder.id);
+				const items = await apiService.fetchFolderItems(authToken, folder.id);
 				if (items.some(item => item.world_id === worldData.world_id)) {
 					worldInFolders.add(folder.id);
 				}

@@ -21,6 +21,8 @@
 	let currentPage = 1;
 	let totalPages = 1;
 	let userId = '';
+	let authToken = '';
+	let cognitoSubUserId = '';
 	let loading = true;
 	let error = '';
 	let success = '';
@@ -43,7 +45,7 @@
 	
 	// Configuration
 	const CONFIG = {
-		API_BASE_URL: "http://localhost:8787",
+		API_BASE_URL: import.meta.env.PUBLIC_API_BASE_URL || "http://localhost:8787",
 		PAGE_SIZE: 10,
 		DEFAULT_PAGE: 1,
 	};
@@ -54,21 +56,26 @@
 			this.baseUrl = baseUrl;
 		}
 
-		async fetchFolders(userId) {
-			const url = `${this.baseUrl}/v2/u/${userId}/folders`;
-			const response = await fetch(url);
+		async fetchFolders(token) {
+			const url = `${this.baseUrl}/v2/folders`;
+			const response = await fetch(url, {
+				headers: {
+					'Authorization': `Bearer ${token}`
+				}
+			});
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 			return await response.json();
 		}
 
-		async createFolder(userId, folderData) {
-			const url = `${this.baseUrl}/v2/u/${userId}/folders`;
+		async createFolder(token, folderData) {
+			const url = `${this.baseUrl}/v2/folders`;
 			const response = await fetch(url, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					'Authorization': `Bearer ${token}`
 				},
 				body: JSON.stringify(folderData),
 			});
@@ -78,12 +85,14 @@
 			return await response.json();
 		}
 
-		async updateFolder(userId, folderId, folderData) {
-			const url = `${this.baseUrl}/v2/u/${userId}/folders/${folderId}`;
+		async updateFolder(token, folderId, folderData) {
+			const formattedId = String(folderId).padStart(8, '0');
+			const url = `${this.baseUrl}/v2/folders/${formattedId}`;
 			const response = await fetch(url, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
+					'Authorization': `Bearer ${token}`
 				},
 				body: JSON.stringify(folderData),
 			});
@@ -93,10 +102,14 @@
 			return await response.json();
 		}
 
-		async deleteFolder(userId, folderId) {
-			const url = `${this.baseUrl}/v2/u/${userId}/folders/${folderId}`;
+		async deleteFolder(token, folderId) {
+			const formattedId = String(folderId).padStart(8, '0');
+			const url = `${this.baseUrl}/v2/folders/${formattedId}`;
 			const response = await fetch(url, {
 				method: "DELETE",
+				headers: {
+					'Authorization': `Bearer ${token}`
+				}
 			});
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
@@ -104,21 +117,28 @@
 			return await response.json();
 		}
 
-		async fetchFolderItems(userId, folderId) {
-			const url = `${this.baseUrl}/v2/u/${userId}/folders/${folderId}/items`;
-			const response = await fetch(url);
+		async fetchFolderItems(token, folderId) {
+			const formattedId = String(folderId).padStart(8, '0');
+			const url = `${this.baseUrl}/v2/folders/${formattedId}/items`;
+			const response = await fetch(url, {
+				headers: {
+					'Authorization': `Bearer ${token}`
+				}
+			});
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
 			return await response.json();
 		}
 
-		async addWorldToFolder(userId, folderId, worldData) {
-			const url = `${this.baseUrl}/v2/u/${userId}/folders/${folderId}/items`;
+		async addWorldToFolder(token, folderId, worldData) {
+			const formattedId = String(folderId).padStart(8, '0');
+			const url = `${this.baseUrl}/v2/folders/${formattedId}/items`;
 			const response = await fetch(url, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					'Authorization': `Bearer ${token}`
 				},
 				body: JSON.stringify(worldData),
 			});
@@ -128,12 +148,14 @@
 			return await response.json();
 		}
 
-		async updateWorldComment(userId, folderId, worldId, comment) {
-			const url = `${this.baseUrl}/v2/u/${userId}/folders/${folderId}/items/${worldId}`;
+		async updateWorldComment(token, folderId, worldId, comment) {
+			const formattedId = String(folderId).padStart(8, '0');
+			const url = `${this.baseUrl}/v2/folders/${formattedId}/items/${worldId}`;
 			const response = await fetch(url, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
+					'Authorization': `Bearer ${token}`
 				},
 				body: JSON.stringify({ comment }),
 			});
@@ -143,10 +165,14 @@
 			return await response.json();
 		}
 
-		async removeWorldFromFolder(userId, folderId, worldId) {
-			const url = `${this.baseUrl}/v2/u/${userId}/folders/${folderId}/items/${worldId}`;
+		async removeWorldFromFolder(token, folderId, worldId) {
+			const formattedId = String(folderId).padStart(8, '0');
+			const url = `${this.baseUrl}/v2/folders/${formattedId}/items/${worldId}`;
 			const response = await fetch(url, {
 				method: "DELETE",
+				headers: {
+					'Authorization': `Bearer ${token}`
+				}
 			});
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
@@ -154,12 +180,13 @@
 			return await response.json();
 		}
 
-		async addWorldToMaster(worldId) {
+		async addWorldToMaster(token, worldId) {
 			const url = `${this.baseUrl}/v2/worlds`;
 			const response = await fetch(url, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					'Authorization': `Bearer ${token}`
 				},
 				body: JSON.stringify({ world_id: worldId }),
 			});
@@ -173,6 +200,11 @@
 	const apiService = new ApiService(CONFIG.API_BASE_URL);
 	
 	// Helper functions
+	function formatFolderId(folderId) {
+		if (!folderId) return '';
+		return String(folderId).padStart(8, '0');
+	}
+	
 	function filterWorldsData() {
 		console.log('filterWorldsData called with searchQuery:', searchQuery);
 		console.log('allWorldsData length:', allWorldsData.length);
@@ -282,9 +314,12 @@
 	
 	function showError(message) {
 		error = message;
+		// Auto-dismiss error after 8 seconds
 		setTimeout(() => {
-			error = '';
-		}, 5000);
+			if (error === message) { // Only clear if the error hasn't changed
+				error = '';
+			}
+		}, 8000);
 	}
 	
 	// Event handlers
@@ -293,7 +328,7 @@
 		error = '';
 		
 		try {
-			const foldersData = await apiService.fetchFolders(userId);
+			const foldersData = await apiService.fetchFolders(authToken);
 			folders = foldersData;
 			
 			if (!currentFolder && folders.length > 0) {
@@ -316,7 +351,7 @@
 				return;
 			}
 
-			const worldsDataResult = await apiService.fetchFolderItems(userId, currentFolder.id);
+			const worldsDataResult = await apiService.fetchFolderItems(authToken, currentFolder.id);
 			resetPagination();
 			searchQuery = ''; // Reset search query when changing folders
 			clearSearchFlag = !clearSearchFlag; // Toggle to trigger SearchBox reset
@@ -348,7 +383,7 @@
 		const folderId = data.folderId;
 		if (confirm("このフォルダーとその中のすべてのワールドを削除しますか？")) {
 			try {
-				await apiService.deleteFolder(userId, folderId);
+				await apiService.deleteFolder(authToken, folderId);
 				showSuccess("フォルダーを削除しました。");
 				await loadData();
 			} catch (err) {
@@ -374,14 +409,14 @@
 
 		try {
 			try {
-				await apiService.addWorldToMaster(worldId);
+				await apiService.addWorldToMaster(authToken, worldId);
 			} catch (err) {
 				if (!err.message.includes("409")) {
 					throw err;
 				}
 			}
 
-			await apiService.addWorldToFolder(userId, currentFolder.id, {
+			await apiService.addWorldToFolder(authToken, currentFolder.id, {
 				world_id: worldId,
 			});
 
@@ -401,7 +436,7 @@
 		const { worldId, comment } = data;
 		
 		try {
-			await apiService.updateWorldComment(userId, currentFolder.id, worldId, comment);
+			await apiService.updateWorldComment(authToken, currentFolder.id, worldId, comment);
 			
 			// Update local state
 			const world = allWorldsData.find(w => w.world_id === worldId);
@@ -422,7 +457,7 @@
 		
 		if (confirm("このワールドをフォルダーから削除しますか？")) {
 			try {
-				await apiService.removeWorldFromFolder(userId, currentFolder.id, worldId);
+				await apiService.removeWorldFromFolder(authToken, currentFolder.id, worldId);
 				showSuccess("ワールドを削除しました。");
 				await loadWorldsForCurrentFolder();
 			} catch (err) {
@@ -472,7 +507,7 @@
 		const { folderId, worldId, comment } = data;
 		
 		try {
-			await apiService.addWorldToFolder(userId, folderId, {
+			await apiService.addWorldToFolder(authToken, folderId, {
 				world_id: worldId,
 				comment: comment
 			});
@@ -493,7 +528,7 @@
 		const { folderId, worldId } = data;
 		
 		try {
-			await apiService.removeWorldFromFolder(userId, folderId, worldId);
+			await apiService.removeWorldFromFolder(authToken, folderId, worldId);
 			showSuccess('フォルダーからワールドを削除しました。');
 			
 			// Update main dashboard if the folder is currently selected
@@ -516,10 +551,10 @@
 		
 		try {
 			if (isEditing) {
-				await apiService.updateFolder(userId, folderId, folderData);
+				await apiService.updateFolder(authToken, folderId, folderData);
 				showSuccess("フォルダーを更新しました。");
 			} else {
-				await apiService.createFolder(userId, folderData);
+				await apiService.createFolder(authToken, folderData);
 				showSuccess("フォルダーを作成しました。");
 			}
 			
@@ -547,36 +582,39 @@
 		const storedUserId = localStorage.getItem("userId");
 		if (storedUserId) {
 			userId = storedUserId;
+			authToken = 'legacy'; // Use a placeholder for legacy mode
 			loadData();
 			return;
 		}
 
 		// Check Cognito authentication
+		const idToken = localStorage.getItem('idToken');
+		const userEmail = localStorage.getItem('userEmail');
+		
+		if (!idToken || !userEmail) {
+			window.location.href = '/';
+			return;
+		}
+		
+		// Verify token is not expired
 		try {
-			const cognitoConfig = {
-				region: import.meta.env.COGNITO_REGION || 'us-east-1',
-				userPoolId: import.meta.env.COGNITO_USER_POOL_ID || '',
-				clientId: import.meta.env.COGNITO_CLIENT_ID || '',
-			};
-
-			const authService = new CognitoAuthService(cognitoConfig);
+			const tokenPayload = JSON.parse(atob(idToken.split('.')[1]));
+			if (tokenPayload.exp * 1000 < Date.now()) {
+				localStorage.removeItem('idToken');
+				localStorage.removeItem('accessToken');
+				localStorage.removeItem('refreshToken');
+				localStorage.removeItem('userEmail');
+				window.location.href = '/';
+				return;
+			}
 			
-			if (!authService.isAuthenticated()) {
-				window.location.href = "/login";
-				return;
-			}
-
-			const userInfo = await authService.getCurrentUser();
-			if (!userInfo) {
-				window.location.href = "/login";
-				return;
-			}
-
-			userId = userInfo.username;
+			userId = userEmail;
+			cognitoSubUserId = tokenPayload.sub || userEmail; // Extract sub for backend usage
+			authToken = idToken;
 			loadData();
 		} catch (error) {
 			console.error('Authentication check failed:', error);
-			window.location.href = "/login";
+			window.location.href = '/';
 		}
 	});
 </script>
@@ -605,11 +643,26 @@
 		<div class="main-content">
 			{#if loading}
 				<div class="loading">データを読み込み中...</div>
-			{:else if error}
-				<div class="error">{error}</div>
 			{:else}
+				{#if error}
+					<div class="error">
+						<div class="error-icon">⚠️</div>
+						<div class="error-content">
+							<div class="error-title">エラーが発生しました</div>
+							<div class="error-message">{error}</div>
+							<button class="error-dismiss" on:click={() => error = ''}>×</button>
+						</div>
+					</div>
+				{/if}
+				
 				{#if success}
-					<div class="success">{success}</div>
+					<div class="success">
+						<div class="success-icon">✅</div>
+						<div class="success-content">
+							<span>{success}</span>
+							<button class="success-dismiss" on:click={() => success = ''}>×</button>
+						</div>
+					</div>
 				{/if}
 				
 				<WorldInput 
@@ -664,7 +717,7 @@
 	<ShareModal
 		isVisible={showShareModal}
 		folderData={currentFolder}
-		{userId}
+		userId={cognitoSubUserId || userId}
 		onclose={handleCloseShareModal}
 	/>
 </div>
@@ -710,20 +763,122 @@
 	.error {
 		background: #fee;
 		color: #c33;
-		padding: 1rem;
-		border-radius: 6px;
-		border-left: 4px solid #c33;
+		border: 1px solid #f5b7b1;
+		border-radius: 8px;
 		margin-bottom: 1rem;
+		box-shadow: 0 2px 4px rgba(220, 53, 69, 0.1);
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		padding: 1rem;
+		position: relative;
+		animation: slideIn 0.3s ease-out;
+	}
+
+	.error-icon {
+		font-size: 1.2rem;
+		flex-shrink: 0;
+		margin-top: 0.1rem;
+	}
+
+	.error-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.error-title {
+		font-weight: 600;
+		font-size: 0.95rem;
+		margin-bottom: 0.25rem;
+	}
+
+	.error-message {
+		font-size: 0.9rem;
+		line-height: 1.4;
+		opacity: 0.9;
+	}
+
+	.error-dismiss {
+		position: absolute;
+		top: 0.5rem;
+		right: 0.5rem;
+		background: none;
+		border: none;
+		font-size: 1.2rem;
+		cursor: pointer;
+		color: #c33;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: background-color 0.2s;
+	}
+
+	.error-dismiss:hover {
+		background: rgba(220, 53, 69, 0.1);
 	}
 
 	.success {
 		background: #d4edda;
 		color: #28a745;
-		padding: 1rem;
-		border-radius: 6px;
-		border-left: 4px solid #28a745;
+		border: 1px solid #b7f5b7;
+		border-radius: 8px;
 		margin-bottom: 1rem;
+		box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 1rem;
+		position: relative;
+		animation: slideIn 0.3s ease-out;
 	}
+
+	.success-icon {
+		font-size: 1.2rem;
+		flex-shrink: 0;
+	}
+
+	.success-content {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.success-dismiss {
+		background: none;
+		border: none;
+		font-size: 1.2rem;
+		cursor: pointer;
+		color: #28a745;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: background-color 0.2s;
+		flex-shrink: 0;
+	}
+
+	.success-dismiss:hover {
+		background: rgba(40, 167, 69, 0.1);
+	}
+
+	@keyframes slideIn {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
 
 	@media (max-width: 768px) {
 		.main-container {

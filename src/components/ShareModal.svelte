@@ -8,10 +8,28 @@
 	
 	let shareUrl = '';
 	let copySuccess = false;
+	let cognitoSubUserId = '';
 	
 	$: if (isVisible && folderData && userId) {
 		const baseUrl = window.location.origin;
-		shareUrl = `${baseUrl}/share/${encodeURIComponent(userId)}/${encodeURIComponent(folderData.id)}`;
+		const formattedFolderId = String(folderData.id).padStart(8, '0');
+		shareUrl = `${baseUrl}/share/${encodeURIComponent(cognitoSubUserId || userId)}/${encodeURIComponent(formattedFolderId)}`;
+	}
+	
+	// Extract Cognito sub from stored token
+	$: if (isVisible) {
+		try {
+			const idToken = localStorage.getItem('idToken');
+			if (idToken) {
+				const tokenPayload = JSON.parse(atob(idToken.split('.')[1]));
+				cognitoSubUserId = tokenPayload.sub || userId;
+			} else {
+				cognitoSubUserId = userId; // fallback for legacy mode
+			}
+		} catch (error) {
+			console.error('Failed to extract sub from token:', error);
+			cognitoSubUserId = userId; // fallback
+		}
 	}
 	
 	function closeModal() {
