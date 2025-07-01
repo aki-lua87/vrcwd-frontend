@@ -1,5 +1,6 @@
 ---
 import DashboardComponent from '../components/Dashboard.svelte';
+import Footer from '../components/Footer.astro';
 ---
 
 <html lang="ja">
@@ -9,8 +10,24 @@ import DashboardComponent from '../components/Dashboard.svelte';
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<title>VRChat Worlds Dashboard</title>
+		<style>
+			html, body {
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+			
+			#root {
+				min-height: 100vh;
+				display: flex;
+				flex-direction: column;
+			}
+		</style>
 	</head>
 	<body>
-		<DashboardComponent client:load />
+		<div id="root">
+			<DashboardComponent client:load />
+			<Footer />
+		</div>
 	</body>
 </html>

@@ -1,43 +1,43 @@
 <script>
 	export let isVisible = false;
 	export let folderData = null;
-	export let userId = '';
-	
+	export let userId = "";
+
 	// Svelte 5 event props
 	export let onclose = () => {};
-	
-	let shareUrl = '';
+
+	let shareUrl = "";
 	let copySuccess = false;
-	let cognitoSubUserId = '';
-	
+	let cognitoSubUserId = "";
+
 	$: if (isVisible && folderData && userId) {
 		const baseUrl = window.location.origin;
-		const formattedFolderId = String(folderData.id).padStart(8, '0');
+		const formattedFolderId = String(folderData.id).padStart(8, "0");
 		shareUrl = `${baseUrl}/share/${encodeURIComponent(cognitoSubUserId || userId)}/${encodeURIComponent(formattedFolderId)}`;
 	}
-	
+
 	// Extract Cognito sub from stored token
 	$: if (isVisible) {
 		try {
-			const idToken = localStorage.getItem('idToken');
+			const idToken = localStorage.getItem("idToken");
 			if (idToken) {
-				const tokenPayload = JSON.parse(atob(idToken.split('.')[1]));
+				const tokenPayload = JSON.parse(atob(idToken.split(".")[1]));
 				cognitoSubUserId = tokenPayload.sub || userId;
 			} else {
 				cognitoSubUserId = userId; // fallback for legacy mode
 			}
 		} catch (error) {
-			console.error('Failed to extract sub from token:', error);
+			console.error("Failed to extract sub from token:", error);
 			cognitoSubUserId = userId; // fallback
 		}
 	}
-	
+
 	function closeModal() {
 		isVisible = false;
 		copySuccess = false;
 		onclose();
 	}
-	
+
 	async function copyToClipboard() {
 		try {
 			await navigator.clipboard.writeText(shareUrl);
@@ -47,11 +47,11 @@
 			}, 2000);
 		} catch (err) {
 			// Fallback for older browsers
-			const textArea = document.createElement('textarea');
+			const textArea = document.createElement("textarea");
 			textArea.value = shareUrl;
 			document.body.appendChild(textArea);
 			textArea.select();
-			document.execCommand('copy');
+			document.execCommand("copy");
 			document.body.removeChild(textArea);
 			copySuccess = true;
 			setTimeout(() => {
@@ -59,19 +59,19 @@
 			}, 2000);
 		}
 	}
-	
+
 	function openInNewTab() {
-		window.open(shareUrl, '_blank');
+		window.open(shareUrl, "_blank");
 	}
-	
+
 	function handleModalClick(event) {
 		if (event.target === event.currentTarget) {
 			closeModal();
 		}
 	}
-	
+
 	function handleKeydown(event) {
-		if (event.key === 'Escape') {
+		if (event.key === "Escape") {
 			closeModal();
 		}
 	}
@@ -85,47 +85,54 @@
 	<div class="modal" on:click={handleModalClick}>
 		<div class="modal-content">
 			<div class="modal-header">
-				<h3 class="modal-title">🔗 フォルダーを共有</h3>
+				<h3 class="modal-title">🔗 フォルダを共有</h3>
 				<button class="close-btn" on:click={closeModal}>×</button>
 			</div>
-			
+
 			<div class="modal-body">
 				<div class="folder-info">
 					<div class="folder-header">
-						<div class="folder-name">📁 {folderData.folder_name}</div>
-						<div class="folder-id">ID: {String(folderData.id).padStart(8, '0')}</div>
+						<div class="folder-name">
+							{folderData.folder_name}
+						</div>
+						<div class="folder-id">
+							ID: {String(folderData.id).padStart(8, "0")}
+						</div>
 					</div>
 					{#if folderData.comment}
 						<div class="folder-comment">{folderData.comment}</div>
 					{/if}
 				</div>
-				
+
 				<div class="share-section">
 					<p class="share-description">
-						この共有URLを使用すると、誰でもこのフォルダーの内容を閲覧できます。
+						この共有URLを使用すると、誰でもこのフォルダの内容を閲覧できます。
 						{#if folderData.is_private}
-							<strong class="warning">注意: このフォルダーは現在非公開に設定されています。共有するには公開設定に変更してください。</strong>
+							<strong class="warning"
+								>注意:
+								このフォルダは現在非公開に設定されています。共有するには公開設定に変更してください。</strong
+							>
 						{/if}
 					</p>
-					
+
 					<div class="url-container">
-						<input 
-							type="text" 
+						<input
+							type="text"
 							class="share-url-input"
 							value={shareUrl}
 							readonly
 						/>
-						<button 
+						<button
 							class="copy-btn"
 							class:success={copySuccess}
 							on:click={copyToClipboard}
 						>
-							{copySuccess ? '✓ コピー済み' : '📋 コピー'}
+							{copySuccess ? "✓ コピー済み" : "📋 コピー"}
 						</button>
 					</div>
 				</div>
 			</div>
-			
+
 			<div class="modal-footer">
 				<button class="btn btn-secondary" on:click={openInNewTab}>
 					🌐 新しいタブで開く

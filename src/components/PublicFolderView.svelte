@@ -48,7 +48,7 @@
 				if (response.status === 400) {
 					throw new Error("無効なフォルダID形式です。");
 				} else if (response.status === 404) {
-					throw new Error("フォルダーが見つかりません。");
+					throw new Error("フォルダが見つかりません。");
 				}
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
@@ -62,10 +62,10 @@
 			if (!response.ok) {
 				if (response.status === 404) {
 					throw new Error(
-						"フォルダーが見つからないか、非公開に設定されています。",
+						"フォルダが見つからないか、非公開に設定されています。",
 					);
 				} else if (response.status === 403) {
-					throw new Error("このフォルダーは非公開です。");
+					throw new Error("このフォルダは非公開です。");
 				}
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
@@ -114,7 +114,24 @@
 	}
 
 	function setWorldsData(data) {
-		allWorldsData = sortWorldsData(data);
+		// データの整合性を確保し、必要なプロパティの存在を保証
+		const safeData = data.map((item) => {
+			// addition_atプロパティへの安全なアクセスを確保
+			const additionAt = item.addition_at || item.created_at || null;
+			const createdAt = item.created_at || null;
+
+			return {
+				...item,
+				addition_at: additionAt,
+				created_at: createdAt,
+				// プロパティアクセスを強制してオブジェクト構造を確定
+				world_name: item.world_name || "",
+				world_description: item.world_description || "",
+				world_author_name: item.world_author_name || "",
+			};
+		});
+
+		allWorldsData = sortWorldsData(safeData);
 		totalCount = allWorldsData.length;
 		totalPages = Math.ceil(allWorldsData.length / CONFIG.PAGE_SIZE);
 		updateCurrentPageData();
@@ -132,9 +149,10 @@
 				if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
 				return 0;
 			} else if (sortBy === "addition_at") {
-				// Use addition_at for folder items, fall back to created_at, then current time
-				aValue = Number(a.addition_at || a.created_at || 0);
-				bValue = Number(b.addition_at || b.created_at || 0);
+				// より堅牢な日付解析
+				aValue = parseTimestamp(a.addition_at || a.created_at);
+				bValue = parseTimestamp(b.addition_at || b.created_at);
+
 				// Numeric comparison for timestamps
 				return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
 			}
@@ -143,6 +161,22 @@
 		});
 
 		return sorted;
+	}
+
+	// 堅牢なタイムスタンプ解析関数
+	function parseTimestamp(value) {
+		if (!value) return 0;
+
+		if (typeof value === "string") {
+			const timestamp = new Date(value).getTime();
+			return isNaN(timestamp) ? 0 : timestamp;
+		}
+
+		if (typeof value === "number") {
+			return value;
+		}
+
+		return 0;
 	}
 
 	function updateSorting(newSortBy) {
@@ -179,7 +213,7 @@
 
 			// Check if folder is private
 			if (folderInfo.is_private) {
-				error = "このフォルダーは非公開です。";
+				error = "このフォルダは非公開です。";
 				loading = false;
 				return;
 			}
@@ -283,10 +317,10 @@
 				world_id: worldId,
 				comment: comment || null,
 			});
-			alert("フォルダーに追加しました！");
+			alert("フォルダに追加しました！");
 		} catch (error) {
 			console.error("Error adding to folder:", error);
-			alert("フォルダーへの追加に失敗しました。");
+			alert("フォルダへの追加に失敗しました。");
 		}
 	}
 
@@ -300,7 +334,7 @@
 		if (folderId) {
 			loadData();
 		} else {
-			error = "フォルダーIDが指定されていません。";
+			error = "フォルダIDが指定されていません。";
 			loading = false;
 		}
 	});
@@ -336,8 +370,8 @@
 			>
 				ワールド名
 				{#if sortBy === "world_name"}
-					<span class="sort-icon"
-						>{sortOrder === "asc" ? "↑" : "↓"}</span
+					<span class="sort-order"
+						>({sortOrder === "asc" ? "降順" : "昇順"})</span
 					>
 				{/if}
 			</button>
@@ -348,8 +382,8 @@
 			>
 				追加日時
 				{#if sortBy === "addition_at"}
-					<span class="sort-icon"
-						>{sortOrder === "asc" ? "↑" : "↓"}</span
+					<span class="sort-order"
+						>({sortOrder === "asc" ? "古い順" : "新しい順"})</span
 					>
 				{/if}
 			</button>
@@ -357,21 +391,23 @@
 
 		{#if worldsData.length === 0}
 			<div class="empty-message">
-				このフォルダーにはワールドがありません。
+				このフォルダにはワールドがありません。
 			</div>
 		{:else}
 			<div class="worlds-container">
-				<div class="worlds-grid">
-					{#each worldsData as world (world.world_id)}
-						<WorldCard
-							{world}
-							onopenWorldDetails={handleOpenWorldDetails}
-							onsaveComment={() => {}}
-							onremoveFromFolder={handleRemoveFromFolder}
-							readonly={!isAuthenticated}
-						/>
-					{/each}
-				</div>
+				{#key `${sortBy}-${sortOrder}-${currentPage}-${worldsData.length}`}
+					<div class="worlds-grid">
+						{#each worldsData as world (world.world_id)}
+							<WorldCard
+								{world}
+								onopenWorldDetails={handleOpenWorldDetails}
+								onsaveComment={() => {}}
+								onremoveFromFolder={handleRemoveFromFolder}
+								readonly={!isAuthenticated}
+							/>
+						{/each}
+					</div>
+				{/key}
 
 				{#if totalPages > 1}
 					<div class="pagination">
@@ -604,6 +640,13 @@
 	.sort-icon {
 		font-size: 0.8rem;
 		font-weight: bold;
+	}
+
+	.sort-order {
+		font-size: 0.75rem;
+		font-weight: normal;
+		opacity: 0.8;
+		margin-left: 0.25rem;
 	}
 
 	@media (max-width: 768px) {

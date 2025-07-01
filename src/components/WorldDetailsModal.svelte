@@ -2,46 +2,51 @@
 	export let isVisible = false;
 	export let worldData = null;
 	export let folders = [];
-	export let userId = '';
-	
+	export let userId = "";
+
 	// Svelte 5 event props
 	export let onclose = () => {};
 	export let onaddToFolder = () => {};
 	export let onremoveFromFolder = () => {};
-	
-	let selectedFolderId = '';
-	let folderComment = '';
+
+	let selectedFolderId = "";
+	let folderComment = "";
 	let worldInFolders = new Set();
-	
+
 	$: if (isVisible && worldData) {
 		loadWorldFolderStatus();
 	}
-	
+
 	async function loadWorldFolderStatus() {
 		worldInFolders.clear();
-		
-		const authToken = localStorage.getItem('idToken') || 'legacy';
-		
+
+		const authToken = localStorage.getItem("idToken") || "legacy";
+
 		const apiService = {
 			async fetchFolderItems(token, folderId) {
-				const formattedId = String(folderId).padStart(8, '0');
-				const url = `${import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:8787'}/v2/folders/${formattedId}/items`;
+				const formattedId = String(folderId).padStart(8, "0");
+				const url = `${import.meta.env.PUBLIC_API_BASE_URL || "http://localhost:8787"}/v2/folders/${formattedId}/items`;
 				const response = await fetch(url, {
 					headers: {
-						'Authorization': `Bearer ${token}`
-					}
+						Authorization: `Bearer ${token}`,
+					},
 				});
 				if (!response.ok) {
 					throw new Error(`HTTP error! status: ${response.status}`);
 				}
 				return await response.json();
-			}
+			},
 		};
-		
+
 		for (const folder of folders) {
 			try {
-				const items = await apiService.fetchFolderItems(authToken, folder.id);
-				if (items.some(item => item.world_id === worldData.world_id)) {
+				const items = await apiService.fetchFolderItems(
+					authToken,
+					folder.id,
+				);
+				if (
+					items.some((item) => item.world_id === worldData.world_id)
+				) {
 					worldInFolders.add(folder.id);
 				}
 			} catch (error) {
@@ -51,58 +56,58 @@
 		// Trigger reactivity
 		worldInFolders = new Set(worldInFolders);
 	}
-	
+
 	function closeModal() {
 		isVisible = false;
 		onclose();
 	}
-	
+
 	function openInVRChat() {
 		if (worldData) {
 			const vrchatUrl = `https://vrchat.com/home/world/${worldData.world_id}/info`;
-			window.open(vrchatUrl, '_blank');
+			window.open(vrchatUrl, "_blank");
 		}
 	}
-	
+
 	async function addToFolder() {
 		if (!selectedFolderId) {
-			alert('フォルダーを選択してください。');
+			alert("フォルダを選択してください。");
 			return;
 		}
-		
+
 		if (worldInFolders.has(parseInt(selectedFolderId))) {
-			alert('このワールドは既にそのフォルダーに追加されています。');
+			alert("このワールドは既にそのフォルダに追加されています。");
 			return;
 		}
-		
+
 		onaddToFolder({
 			folderId: selectedFolderId,
 			worldId: worldData.world_id,
-			comment: folderComment.trim() || null
+			comment: folderComment.trim() || null,
 		});
-		
+
 		// Update local state
 		worldInFolders.add(parseInt(selectedFolderId));
 		worldInFolders = new Set(worldInFolders);
-		
+
 		// Clear form
-		selectedFolderId = '';
-		folderComment = '';
+		selectedFolderId = "";
+		folderComment = "";
 	}
-	
+
 	function removeFromFolder(folderId) {
-		if (confirm('このフォルダーからワールドを削除しますか？')) {
+		if (confirm("このフォルダからワールドを削除しますか？")) {
 			onremoveFromFolder({
 				folderId: folderId,
-				worldId: worldData.world_id
+				worldId: worldData.world_id,
 			});
-			
+
 			// Update local state
 			worldInFolders.delete(folderId);
 			worldInFolders = new Set(worldInFolders);
 		}
 	}
-	
+
 	function handleModalClick(event) {
 		if (event.target === event.currentTarget) {
 			closeModal();
@@ -119,12 +124,12 @@
 				<h2 class="modal-title">🌍 ワールド詳細</h2>
 				<button class="close-btn" on:click={closeModal}>×</button>
 			</div>
-			
+
 			<div class="world-details-content">
 				<div class="world-details-grid">
 					<div class="image-section">
-						<img 
-							src={worldData.world_thumbnail_image_url} 
+						<img
+							src={worldData.world_thumbnail_image_url}
 							alt={worldData.world_name}
 							class="world-image"
 						/>
@@ -132,11 +137,16 @@
 					<div class="info-section">
 						<div class="world-info">
 							<h3 class="world-title">{worldData.world_name}</h3>
-							<div class="world-author">👤 {worldData.world_author_name}</div>
+							<div class="world-author">
+								👤 {worldData.world_author_name}
+							</div>
 						</div>
-						
+
 						<div class="world-actions">
-							<button class="btn btn-primary" on:click={openInVRChat}>
+							<button
+								class="btn btn-primary"
+								on:click={openInVRChat}
+							>
 								🌐 VRChatで開く
 							</button>
 						</div>
@@ -145,17 +155,24 @@
 
 				<div class="description-section">
 					<h4 class="section-title">📝 説明</h4>
-					<div class="world-description">{worldData.world_description}</div>
+					<div class="world-description">
+						{worldData.world_description}
+					</div>
 				</div>
 
 				<div class="folders-section">
-					<h4 class="section-title">📁 フォルダー管理</h4>
-					
+					<h4 class="section-title">📁 フォルダ管理</h4>
+
 					<div class="add-folder-form">
-						<select bind:value={selectedFolderId} class="folder-select">
-							<option value="">フォルダーを選択</option>
+						<select
+							bind:value={selectedFolderId}
+							class="folder-select"
+						>
+							<option value="">フォルダを選択</option>
 							{#each folders as folder (folder.id)}
-								<option value={folder.id}>{folder.folder_name}</option>
+								<option value={folder.id}
+									>{folder.folder_name}</option
+								>
 							{/each}
 						</select>
 						<input
@@ -165,7 +182,7 @@
 							placeholder="コメント (任意)"
 						/>
 						<button class="btn btn-primary" on:click={addToFolder}>
-							📂 フォルダーに追加
+							📂 フォルダに追加
 						</button>
 					</div>
 				</div>
@@ -339,7 +356,8 @@
 		margin-bottom: 1.5rem;
 	}
 
-	.folder-select, .comment-input {
+	.folder-select,
+	.comment-input {
 		padding: 0.5rem;
 		border: 1px solid #ddd;
 		border-radius: 6px;
@@ -356,7 +374,6 @@
 		min-width: 250px;
 	}
 
-
 	@media (max-width: 768px) {
 		.world-details-grid {
 			grid-template-columns: 1fr;
@@ -367,7 +384,8 @@
 			align-items: stretch;
 		}
 
-		.folder-select, .comment-input {
+		.folder-select,
+		.comment-input {
 			min-width: auto;
 		}
 	}

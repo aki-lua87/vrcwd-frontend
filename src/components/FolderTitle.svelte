@@ -1,29 +1,29 @@
 <script>
 	export let currentFolder = null;
-	export let userId = '';
-	
+	export let userId = "";
+
 	// Svelte 5 event props
 	export let oneditFolder = () => {};
 	export let ondeleteFolder = () => {};
 	export let onshareFolder = () => {};
-	
+
 	function editFolder() {
 		if (currentFolder) {
 			oneditFolder({ folder: currentFolder });
 		}
 	}
-	
+
 	function deleteFolder() {
 		if (currentFolder) {
 			ondeleteFolder({ folderId: currentFolder.id });
 		}
 	}
-	
+
 	function shareFolder() {
 		if (currentFolder && userId) {
-			onshareFolder({ 
-				folder: currentFolder, 
-				userId: userId 
+			onshareFolder({
+				folder: currentFolder,
+				userId: userId,
 			});
 		}
 	}
@@ -33,7 +33,9 @@
 	<div class="header-content">
 		<div class="folder-info">
 			<h2 class="folder-title">
-				{currentFolder ? `📁 ${currentFolder.folder_name}` : '📁 フォルダーを選択してください'}
+				{currentFolder
+					? `📁 ${currentFolder.folder_name}`
+					: "📁 フォルダを選択してください"}
 			</h2>
 			{#if currentFolder && currentFolder.comment && currentFolder.comment.trim()}
 				<p class="folder-comment">{currentFolder.comment}</p>
@@ -44,10 +46,16 @@
 				<button class="btn btn-small btn-share" on:click={shareFolder}>
 					🔗 共有
 				</button>
-				<button class="btn btn-small btn-secondary" on:click={editFolder}>
+				<button
+					class="btn btn-small btn-secondary"
+					on:click={editFolder}
+				>
 					✏️ 編集
 				</button>
-				<button class="btn btn-small btn-danger" on:click={deleteFolder}>
+				<button
+					class="btn btn-small btn-danger"
+					on:click={deleteFolder}
+				>
 					🗑️ 削除
 				</button>
 			</div>

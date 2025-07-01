@@ -63,7 +63,7 @@
 
 		async fetchFolders(token) {
 			const url = `${this.baseUrl}/v2/folders`;
-	
+
 			const response = await fetch(url, {
 				headers: {
 					Authorization: `Bearer ${token}`,
@@ -250,53 +250,34 @@
 	function updateCurrentPageData() {
 		const startIndex = (currentPage - 1) * CONFIG.PAGE_SIZE;
 		const endIndex = startIndex + CONFIG.PAGE_SIZE;
-		
-		console.log('🔄 updateCurrentPageData called');
-		console.log('📄 Page info:', { currentPage, startIndex, endIndex });
-		console.log('📊 filteredWorldsData.length:', filteredWorldsData.length);
-		
 		worldsData = filteredWorldsData.slice(startIndex, endIndex);
-		
-		console.log('✅ worldsData updated, length:', worldsData.length);
-		if (worldsData.length > 0) {
-			console.log('📄 Current page items:');
-			for (let i = 0; i < Math.min(3, worldsData.length); i++) {
-				const item = worldsData[i];
-				console.log(`  ${i + 1}. ${item.world_name} - addition_at: ${item.addition_at}`);
-			}
-		}
-		
 		// Force reactivity update
 		worldsData = [...worldsData];
 	}
 
 	function setWorldsData(data) {
-		console.log('📥 setWorldsData called with data length:', data.length);
-		if (data.length > 0) {
-			console.log('📋 First data item:', {
-				world_name: data[0].world_name,
-				addition_at: data[0].addition_at,
-				created_at: data[0].created_at
-			});
-		}
-		allWorldsData = sortWorldsData(data);
-		console.log('✅ allWorldsData updated, length:', allWorldsData.length);
+		// データの整合性を確保し、必要なプロパティの存在を保証
+		const safeData = data.map((item) => {
+			// addition_atプロパティへの安全なアクセスを確保
+			const additionAt = item.addition_at || item.created_at || null;
+			const createdAt = item.created_at || null;
+
+			return {
+				...item,
+				addition_at: additionAt,
+				created_at: createdAt,
+				// プロパティアクセスを強制してオブジェクト構造を確定
+				world_name: item.world_name || "",
+				world_description: item.world_description || "",
+				world_author_name: item.world_author_name || "",
+			};
+		});
+
+		allWorldsData = sortWorldsData(safeData);
 		filterWorldsData();
 	}
 
 	function sortWorldsData(data) {
-		console.log('🔄 Sorting data by:', sortBy, 'order:', sortOrder);
-		console.log('📊 Data length:', data.length);
-		
-		// Show first 5 items before sorting when sorting by addition_at
-		if (sortBy === "addition_at" && data.length > 0) {
-			console.log('📋 First 5 items before sorting:');
-			for (let i = 0; i < Math.min(5, data.length); i++) {
-				const item = data[i];
-				console.log(`${i + 1}. ${item.world_name} - addition_at: ${item.addition_at} - created_at: ${item.created_at}`);
-			}
-		}
-		
 		const sorted = [...data].sort((a, b) => {
 			let aValue, bValue;
 
@@ -308,19 +289,10 @@
 				if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
 				return 0;
 			} else if (sortBy === "addition_at") {
-				// Parse addition_at as Date if it's a string, otherwise use as number
-				if (typeof a.addition_at === 'string') {
-					aValue = new Date(a.addition_at).getTime();
-				} else {
-					aValue = Number(a.addition_at || a.created_at || 0);
-				}
-				
-				if (typeof b.addition_at === 'string') {
-					bValue = new Date(b.addition_at).getTime();
-				} else {
-					bValue = Number(b.addition_at || b.created_at || 0);
-				}
-				
+				// より堅牢な日付解析
+				aValue = parseTimestamp(a.addition_at || a.created_at);
+				bValue = parseTimestamp(b.addition_at || b.created_at);
+
 				// Numeric comparison for timestamps
 				return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
 			}
@@ -328,43 +300,41 @@
 			return 0;
 		});
 
-		// Show first 5 items after sorting when sorting by addition_at
-		if (sortBy === "addition_at" && sorted.length > 0) {
-			console.log('✅ First 5 items after sorting:');
-			for (let i = 0; i < Math.min(5, sorted.length); i++) {
-				const item = sorted[i];
-				console.log(`${i + 1}. ${item.world_name} - addition_at: ${item.addition_at}`);
-			}
-		}
-		
-		console.log('✅ Sorted data length:', sorted.length);
 		return sorted;
 	}
 
+	// 堅牢なタイムスタンプ解析関数
+	function parseTimestamp(value) {
+		if (!value) return 0;
+
+		if (typeof value === "string") {
+			const timestamp = new Date(value).getTime();
+			return isNaN(timestamp) ? 0 : timestamp;
+		}
+
+		if (typeof value === "number") {
+			return value;
+		}
+
+		return 0;
+	}
+
 	function updateSorting(newSortBy) {
-		console.log('🔀 updateSorting called with:', newSortBy);
-		console.log('📝 Current state - sortBy:', sortBy, 'sortOrder:', sortOrder);
-		
 		if (sortBy === newSortBy) {
 			// Toggle order if same field
 			sortOrder = sortOrder === "asc" ? "desc" : "asc";
-			console.log('🔄 Toggled order to:', sortOrder);
 		} else {
 			// Set new field and default to desc for date, asc for name
 			sortBy = newSortBy;
 			sortOrder = newSortBy === "world_name" ? "asc" : "desc";
-			console.log('📋 New sorting - sortBy:', sortBy, 'sortOrder:', sortOrder);
 		}
 
 		// Re-sort and update display - call sortWorldsData directly and then filter
 		if (allWorldsData.length > 0) {
-			console.log('🔄 Re-sorting allWorldsData with length:', allWorldsData.length);
 			allWorldsData = sortWorldsData(allWorldsData);
 			// Force reactivity update for allWorldsData
 			allWorldsData = [...allWorldsData];
 			filterWorldsData();
-		} else {
-			console.log('⚠️ No data to sort');
 		}
 	}
 
@@ -423,7 +393,6 @@
 	async function loadData() {
 		loading = true;
 		error = "";
-
 
 		try {
 			const foldersData = await apiService.fetchFolders(authToken);
@@ -493,16 +462,14 @@
 
 	async function handleDeleteFolder(data) {
 		const folderId = data.folderId;
-		if (
-			confirm("このフォルダーとその中のすべてのワールドを削除しますか？")
-		) {
+		if (confirm("このフォルダとその中のすべてのワールドを削除しますか？")) {
 			try {
 				await apiService.deleteFolder(authToken, folderId);
-				showSuccess("フォルダーを削除しました。");
+				showSuccess("フォルダを削除しました。");
 				await loadData();
 			} catch (err) {
 				console.error("Error deleting folder:", err);
-				showError("フォルダーの削除に失敗しました。");
+				showError("フォルダの削除に失敗しました。");
 			}
 		}
 	}
@@ -517,7 +484,7 @@
 		}
 
 		if (!currentFolder) {
-			showError("ワールドを追加するフォルダーを選択してください。");
+			showError("ワールドを追加するフォルダを選択してください。");
 			return;
 		}
 
@@ -576,7 +543,7 @@
 	async function handleRemoveFromFolder(data) {
 		const { worldId } = data;
 
-		if (confirm("このワールドをフォルダーから削除しますか？")) {
+		if (confirm("このワールドをフォルダから削除しますか？")) {
 			try {
 				await apiService.removeWorldFromFolder(
 					authToken,
@@ -628,7 +595,7 @@
 				comment: comment,
 			});
 
-			showSuccess("ワールドをフォルダーに追加しました。");
+			showSuccess("ワールドをフォルダに追加しました。");
 
 			// Update main dashboard if the folder is currently selected
 			if (currentFolder && currentFolder.id == folderId) {
@@ -636,7 +603,7 @@
 			}
 		} catch (err) {
 			console.error("Error adding to folder:", err);
-			showError("フォルダーへの追加に失敗しました。");
+			showError("フォルダへの追加に失敗しました。");
 		}
 	}
 
@@ -649,7 +616,7 @@
 				folderId,
 				worldId,
 			);
-			showSuccess("フォルダーからワールドを削除しました。");
+			showSuccess("フォルダからワールドを削除しました。");
 
 			// Update main dashboard if the folder is currently selected
 			if (currentFolder && currentFolder.id == folderId) {
@@ -657,7 +624,7 @@
 			}
 		} catch (err) {
 			console.error("Error removing from folder:", err);
-			showError("フォルダーからの削除に失敗しました。");
+			showError("フォルダからの削除に失敗しました。");
 		}
 	}
 
@@ -672,17 +639,17 @@
 		try {
 			if (isEditing) {
 				await apiService.updateFolder(authToken, folderId, folderData);
-				showSuccess("フォルダーを更新しました。");
+				showSuccess("フォルダを更新しました。");
 			} else {
 				await apiService.createFolder(authToken, folderData);
-				showSuccess("フォルダーを作成しました。");
+				showSuccess("フォルダを作成しました。");
 			}
 
 			// Reload data to reflect changes
 			await loadData();
 		} catch (err) {
 			console.error("Error saving folder:", err);
-			showError("フォルダーの保存に失敗しました。");
+			showError("フォルダの保存に失敗しました。");
 		}
 	}
 
@@ -849,8 +816,10 @@
 						>
 							ワールド名
 							{#if sortBy === "world_name"}
-								<span class="sort-icon"
-									>{sortOrder === "asc" ? "↑" : "↓"}</span
+								<span class="sort-order"
+									>({sortOrder === "asc"
+										? "降順"
+										: "昇順"})</span
 								>
 							{/if}
 						</button>
@@ -861,8 +830,10 @@
 						>
 							追加日時
 							{#if sortBy === "addition_at"}
-								<span class="sort-icon"
-									>{sortOrder === "asc" ? "↑" : "↓"}</span
+								<span class="sort-order"
+									>({sortOrder === "asc"
+										? "古い順"
+										: "新しい順"})</span
 								>
 							{/if}
 						</button>
@@ -1125,6 +1096,13 @@
 	.sort-icon {
 		font-size: 0.8rem;
 		font-weight: bold;
+	}
+
+	.sort-order {
+		font-size: 0.75rem;
+		font-weight: normal;
+		opacity: 0.8;
+		margin-left: 0.25rem;
 	}
 
 	@media (max-width: 768px) {

@@ -1,49 +1,53 @@
 <script>
 	export let folders = [];
 	export let currentFolder = null;
-	
+
 	// Svelte 5 event props
 	export let onselectFolder = () => {};
 	export let oncreateFolder = () => {};
 	export let oneditFolder = () => {};
 	export let ondeleteFolder = () => {};
-	
+
 	function selectFolder(folderId) {
 		onselectFolder({ folderId });
 	}
-	
+
 	function createFolder() {
 		oncreateFolder();
 	}
-	
+
 	function editFolder(folder) {
 		oneditFolder({ folder });
 	}
-	
+
 	function deleteFolder(folderId) {
 		ondeleteFolder({ folderId });
 	}
 </script>
 
 <div class="sidebar">
-	<h2>📁 フォルダー</h2>
+	<h2>📁 フォルダ管理</h2>
 	<button
 		class="btn btn-primary"
 		id="createFolderBtn"
 		on:click={createFolder}
 	>
-		新しいフォルダー
+		新しいフォルダ
 	</button>
-	
+
 	<ul class="folder-list">
 		{#each folders as folder (folder.id)}
-			<li class="folder-item" class:active={currentFolder && currentFolder.id === folder.id}>
+			<li
+				class="folder-item"
+				class:active={currentFolder && currentFolder.id === folder.id}
+			>
 				<button
 					class="folder-button"
-					class:active={currentFolder && currentFolder.id === folder.id}
+					class:active={currentFolder &&
+						currentFolder.id === folder.id}
 					on:click={() => selectFolder(folder.id)}
 				>
-					📁 {folder.folder_name}
+					{folder.folder_name}
 				</button>
 			</li>
 		{/each}

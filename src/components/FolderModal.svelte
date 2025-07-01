@@ -1,66 +1,66 @@
 <script>
 	export let isVisible = false;
 	export let editingFolder = null;
-	
+
 	// Svelte 5 event props
 	export let onclose = () => {};
 	export let onsave = () => {};
-	
-	let folderName = '';
-	let folderComment = '';
+
+	let folderName = "";
+	let folderComment = "";
 	let isPrivate = true;
-	
+
 	$: if (isVisible) {
 		if (editingFolder) {
 			// Editing existing folder
-			folderName = editingFolder.folder_name || '';
-			folderComment = editingFolder.comment || '';
+			folderName = editingFolder.folder_name || "";
+			folderComment = editingFolder.comment || "";
 			isPrivate = editingFolder.is_private === 1;
 		} else {
 			// Creating new folder
-			folderName = '';
-			folderComment = '';
+			folderName = "";
+			folderComment = "";
 			isPrivate = true;
 		}
 	}
-	
-	$: modalTitle = editingFolder ? 'フォルダー編集' : '新しいフォルダー';
-	
+
+	$: modalTitle = editingFolder ? "フォルダ編集" : "新しいフォルダ";
+
 	function closeModal() {
 		isVisible = false;
 		onclose();
 	}
-	
+
 	function saveFolder() {
 		const trimmedName = folderName.trim();
 		if (!trimmedName) {
-			alert('フォルダー名を入力してください。');
+			alert("フォルダ名を入力してください。");
 			return;
 		}
-		
+
 		const folderData = {
 			folder_name: trimmedName,
 			comment: folderComment.trim(),
-			is_private: isPrivate ? 1 : 0
+			is_private: isPrivate ? 1 : 0,
 		};
-		
+
 		onsave({
 			folderData,
 			isEditing: !!editingFolder,
-			folderId: editingFolder?.id
+			folderId: editingFolder?.id,
 		});
-		
+
 		closeModal();
 	}
-	
+
 	function handleModalClick(event) {
 		if (event.target === event.currentTarget) {
 			closeModal();
 		}
 	}
-	
+
 	function handleKeydown(event) {
-		if (event.key === 'Escape') {
+		if (event.key === "Escape") {
 			closeModal();
 		}
 	}
@@ -77,32 +77,32 @@
 				<h3 class="modal-title">{modalTitle}</h3>
 				<button class="close-btn" on:click={closeModal}>×</button>
 			</div>
-			
+
 			<div class="modal-body">
 				<div class="form-group">
-					<label for="folderName">フォルダー名</label>
-					<input 
-						type="text" 
+					<label for="folderName">フォルダ名</label>
+					<input
+						type="text"
 						id="folderName"
 						bind:value={folderName}
-						placeholder="フォルダー名を入力してください"
-						required 
+						placeholder="フォルダ名を入力してください"
+						required
 					/>
 				</div>
-				
+
 				<div class="form-group">
 					<label for="folderComment">コメント</label>
-					<textarea 
+					<textarea
 						id="folderComment"
 						bind:value={folderComment}
-						placeholder="フォルダーの説明やコメントを入力してください（任意）"
+						placeholder="フォルダの説明やコメントを入力してください（任意）"
 					></textarea>
 				</div>
-				
+
 				<div class="form-group">
 					<div class="checkbox-group">
-						<input 
-							type="checkbox" 
+						<input
+							type="checkbox"
 							id="folderPrivate"
 							bind:checked={isPrivate}
 						/>
@@ -110,7 +110,7 @@
 					</div>
 				</div>
 			</div>
-			
+
 			<div class="modal-footer">
 				<button class="btn btn-secondary" on:click={closeModal}>
 					キャンセル

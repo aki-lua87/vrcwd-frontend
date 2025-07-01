@@ -1,5 +1,5 @@
 ---
-
+import Footer from '../components/Footer.astro';
 ---
 
 <html lang="ja">
@@ -18,6 +18,8 @@
 				padding: 20px;
 				min-height: 100vh;
 				color: #333;
+				display: flex;
+				flex-direction: column;
 			}
 
 			.container {
@@ -130,9 +132,7 @@
 				最終更新日：2025年7月1日
 			</p>
 
-			<div style="text-align: center;">
-				<a href="/" class="back-button">トップページに戻る</a>
-			</div>
 		</div>
+		<Footer hidePrivacy={true} />
 	</body>
 </html>

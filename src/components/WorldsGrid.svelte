@@ -1,8 +1,8 @@
 <script>
-	import WorldCard from './WorldCard.svelte';
-	
+	import WorldCard from "./WorldCard.svelte";
+
 	export let worldsData = [];
-	
+
 	// Svelte 5 event props
 	export let onopenWorldDetails = () => {};
 	export let onsaveComment = () => {};
@@ -11,12 +11,10 @@
 
 <div class="worlds-grid">
 	{#if worldsData.length === 0}
-		<div class="empty-message">
-			このフォルダーにはワールドがありません。
-		</div>
+		<div class="empty-message">このフォルダにはワールドがありません。</div>
 	{:else}
 		{#each worldsData as world (world.world_id)}
-			<WorldCard 
+			<WorldCard
 				{world}
 				{onopenWorldDetails}
 				{onsaveComment}
