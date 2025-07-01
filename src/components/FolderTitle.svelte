@@ -153,4 +153,51 @@
 	.btn-share:hover {
 		background: #218838;
 	}
+
+	/* スマートフォン向けスタイル */
+	@media (max-width: 768px) {
+		.folder-title-section {
+			position: static;
+			top: auto;
+			padding: 1rem 0.5rem;
+		}
+		
+		.header-content {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 1rem;
+			padding: 0;
+		}
+		
+		.folder-info {
+			text-align: center;
+		}
+		
+		.folder-title {
+			font-size: 1.4rem;
+			justify-content: center;
+		}
+		
+		.folder-comment {
+			margin: 0.5rem 0 0 0;
+			text-align: center;
+			font-size: 0.9rem;
+		}
+		
+		.folder-actions {
+			justify-content: center;
+			flex-wrap: wrap;
+			margin-top: 0;
+		}
+		
+		.btn {
+			flex: 1;
+			min-width: 80px;
+		}
+		
+		.btn-small {
+			padding: 0.6rem 0.8rem;
+			font-size: 0.75rem;
+		}
+	}
 </style>

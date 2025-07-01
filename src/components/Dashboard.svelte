@@ -1109,6 +1109,7 @@
 		.main-container {
 			flex-direction: column;
 			gap: 1rem;
+			padding: 1rem 0.5rem;
 		}
 	}
 </style>

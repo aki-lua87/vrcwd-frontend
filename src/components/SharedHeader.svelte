@@ -149,4 +149,29 @@
 	.nav-btn:hover {
 		background: rgba(255, 255, 255, 0.3);
 	}
+
+	/* スマートフォン向けスタイル */
+	@media (max-width: 768px) {
+		.header-content {
+			padding: 0 0.5rem;
+		}
+		
+		.header h1 {
+			font-size: 1.2rem;
+		}
+		
+		.nav-info {
+			flex-wrap: wrap;
+			gap: 0.5rem;
+		}
+		
+		.user-display {
+			font-size: 0.8rem;
+		}
+		
+		.nav-btn {
+			padding: 0.4rem 0.8rem;
+			font-size: 0.8rem;
+		}
+	}
 </style>
