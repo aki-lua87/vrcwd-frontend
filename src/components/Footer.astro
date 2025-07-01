@@ -15,7 +15,7 @@ const {
 <footer class="site-footer">
 	<div class="footer-content">
 		<div class="footer-links">
-			<a href="/">ホーム</a>
+			<a href="/dashboard">ホーム</a>
 			<a href="/about">このサイトについて</a>
 			<a href="/terms">利用規約</a>
 			<a href="/privacy">プライバシーポリシー</a>
@@ -68,14 +68,17 @@ const {
 	.site-footer {
 		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 		color: white;
-		padding: 2rem 1rem;
+		padding: 2rem 0;
 		margin-top: auto;
 		text-align: center;
+		width: 100%;
+		box-sizing: border-box;
 	}
 
 	.footer-content {
 		max-width: 800px;
 		margin: 0 auto;
+		padding: 0 1rem;
 	}
 
 	.footer-links {

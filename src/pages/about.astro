@@ -15,9 +15,16 @@ import Footer from "../components/Footer.astro";
 					Roboto, sans-serif;
 				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 				margin: 0;
-				padding: 20px;
+				padding: 0;
 				min-height: 100vh;
 				color: #333;
+				display: flex;
+				flex-direction: column;
+			}
+
+			.main-wrapper {
+				flex: 1;
+				padding: 20px;
 				display: flex;
 				flex-direction: column;
 			}
@@ -29,6 +36,9 @@ import Footer from "../components/Footer.astro";
 				padding: 2rem;
 				border-radius: 12px;
 				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+				flex: 1;
+				width: 100%;
+				box-sizing: border-box;
 			}
 
 			h1 {
@@ -121,7 +131,8 @@ import Footer from "../components/Footer.astro";
 		</style>
 	</head>
 	<body>
-		<div class="container">
+		<div class="main-wrapper">
+			<div class="container">
 			<h1>このサイトについて</h1>
 
 			<div class="highlight">
@@ -163,6 +174,7 @@ import Footer from "../components/Footer.astro";
 				本サービスはベータ版です。予期せぬ不具合が発生する可能性があります。
 				また、表示されている情報については正確であること、最新であることを保証するものではありません。
 				ご利用は自己責任でお願いいたします。
+			</div>
 			</div>
 		</div>
 		<Footer hideAbout={true} />

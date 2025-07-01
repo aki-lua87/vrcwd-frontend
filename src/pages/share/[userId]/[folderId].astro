@@ -29,32 +29,30 @@ if (!userId || !folderId) {
     /><meta property="og:type" content="website" /><meta
       property="og:url"
       content={Astro.url.href}
-    /><meta name="twitter:card" content="summary" /></head
+    /><meta name="twitter:card" content="summary" /><meta
+      name="twitter:title"
+      content="VRChat Worlds"
+    /><meta
+      name="twitter:description"
+      content={`VRChatワールドコレクションを見る`}
+    /><style>
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #root {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+    </style></head
   >
 
   <!-- Twitter Card -->
-  フォルダ
-  <meta name="twitter:title" content="VRChat Worlds" />
-  <meta
-    name="twitter:description"
-    content={`VRChatワールドコレクションを見る`}
-  />
-
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #root {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-  </style>
 
   <body>
     <div id="root">
@@ -62,6 +60,4 @@ if (!userId || !folderId) {
     </div>
     <Footer />
   </body>
-
-
 </html>
