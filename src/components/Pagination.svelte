@@ -9,12 +9,16 @@
 	function previousPage() {
 		if (currentPage > 1) {
 			onpageChange({ page: currentPage - 1 });
+			// Scroll to top of page
+			window.scrollTo({ top: 0, behavior: 'smooth' });
 		}
 	}
 	
 	function nextPage() {
 		if (currentPage < totalPages) {
 			onpageChange({ page: currentPage + 1 });
+			// Scroll to top of page
+			window.scrollTo({ top: 0, behavior: 'smooth' });
 		}
 	}
 	

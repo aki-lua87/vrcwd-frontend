@@ -168,25 +168,6 @@
 							📂 フォルダーに追加
 						</button>
 					</div>
-
-					<div class="folders-grid">
-						{#each folders as folder (folder.id)}
-							<div 
-								class="folder-card"
-								class:added={worldInFolders.has(folder.id)}
-								on:click={() => worldInFolders.has(folder.id) ? removeFromFolder(folder.id) : null}
-								role="button"
-								tabindex="0"
-								on:keydown
-							>
-								<div class="folder-name">📁 {folder.folder_name}</div>
-								<div class="folder-comment">{folder.comment || 'コメントなし'}</div>
-								{#if worldInFolders.has(folder.id)}
-									<div class="added-badge">追加済み</div>
-								{/if}
-							</div>
-						{/each}
-					</div>
 				</div>
 			</div>
 		</div>
@@ -375,56 +356,6 @@
 		min-width: 250px;
 	}
 
-	.folders-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-		gap: 0.75rem;
-	}
-
-	.folder-card {
-		padding: 0.75rem;
-		border: 1px solid #ddd;
-		border-radius: 6px;
-		background: white;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		position: relative;
-	}
-
-	.folder-card:hover {
-		border-color: #667eea;
-		transform: translateY(-1px);
-	}
-
-	.folder-card.added {
-		border-color: #667eea;
-		background: #f8f9ff;
-	}
-
-	.folder-card.added:hover {
-		background: #f0f4ff;
-	}
-
-	.folder-name {
-		font-weight: 600;
-		margin-bottom: 0.25rem;
-	}
-
-	.folder-comment {
-		font-size: 0.8rem;
-		color: #666;
-	}
-
-	.added-badge {
-		position: absolute;
-		top: 0.5rem;
-		right: 0.5rem;
-		background: #667eea;
-		color: white;
-		font-size: 0.7rem;
-		padding: 0.2rem 0.4rem;
-		border-radius: 12px;
-	}
 
 	@media (max-width: 768px) {
 		.world-details-grid {

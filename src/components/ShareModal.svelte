@@ -91,7 +91,10 @@
 			
 			<div class="modal-body">
 				<div class="folder-info">
-					<div class="folder-name">📁 {folderData.folder_name}</div>
+					<div class="folder-header">
+						<div class="folder-name">📁 {folderData.folder_name}</div>
+						<div class="folder-id">ID: {String(folderData.id).padStart(8, '0')}</div>
+					</div>
 					{#if folderData.comment}
 						<div class="folder-comment">{folderData.comment}</div>
 					{/if}
@@ -205,11 +208,27 @@
 		margin-bottom: 1.5rem;
 	}
 
+	.folder-header {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin-bottom: 0.5rem;
+	}
+
 	.folder-name {
 		font-size: 1.1rem;
 		font-weight: 600;
 		color: #333;
-		margin-bottom: 0.5rem;
+	}
+
+	.folder-id {
+		font-size: 0.8rem;
+		color: #667eea;
+		font-family: monospace;
+		background: #e3f2fd;
+		padding: 0.25rem 0.5rem;
+		border-radius: 4px;
+		white-space: nowrap;
 	}
 
 	.folder-comment {

@@ -1,0 +1,189 @@
+---
+
+---
+
+<html lang="ja">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>このサイトについて - VRChat Worlds Dashboard</title>
+		<style>
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+					Roboto, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				margin: 0;
+				padding: 20px;
+				min-height: 100vh;
+				color: #333;
+			}
+
+			.container {
+				max-width: 800px;
+				margin: 0 auto;
+				background: white;
+				padding: 2rem;
+				border-radius: 12px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+			}
+
+			h1 {
+				text-align: center;
+				color: #333;
+				margin-bottom: 2rem;
+				font-size: 2rem;
+			}
+
+			h2 {
+				color: #555;
+				border-bottom: 2px solid #667eea;
+				padding-bottom: 0.5rem;
+				margin-top: 2rem;
+			}
+
+			h3 {
+				color: #666;
+				margin-top: 1.5rem;
+			}
+
+			p,
+			li {
+				line-height: 1.6;
+				color: #666;
+			}
+
+			ul {
+				padding-left: 1.5rem;
+			}
+
+			.highlight {
+				background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%);
+				padding: 1rem;
+				border-radius: 8px;
+				border-left: 4px solid #667eea;
+				margin: 1rem 0;
+			}
+
+			.feature-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+				gap: 1rem;
+				margin: 1.5rem 0;
+			}
+
+			.feature-card {
+				background: #f8f9fa;
+				padding: 1rem;
+				border-radius: 8px;
+				border: 1px solid #e9ecef;
+			}
+
+			.feature-card h4 {
+				color: #667eea;
+				margin-top: 0;
+				margin-bottom: 0.5rem;
+			}
+
+			.back-button {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				border: none;
+				padding: 0.75rem 2rem;
+				font-size: 1rem;
+				font-weight: 600;
+				border-radius: 6px;
+				cursor: pointer;
+				transition:
+					transform 0.2s ease,
+					box-shadow 0.2s ease;
+				text-decoration: none;
+				display: inline-block;
+				margin-top: 2rem;
+			}
+
+			.back-button:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+			}
+
+			.version-info {
+				background: #e8f5e8;
+				padding: 0.75rem;
+				border-radius: 6px;
+				border-left: 4px solid #28a745;
+				margin: 1rem 0;
+				font-size: 0.9rem;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>このサイトについて</h1>
+
+			<div class="highlight">
+				<p>
+					<strong>VRChat Worlds Dashboard</strong> は、VRChatワールドを効率的に管理・整理するためのWebアプリケーションです。
+				</p>
+			</div>
+
+			<h2>サービス概要</h2>
+			<p>
+				VRChatでは数多くのワールドが存在し、お気に入りのワールドを見つけても後で探すのが困難になることがあります。
+				本サービスでは、ワールドをフォルダーで整理し、コメントを付けて管理することで、あなたのVRChat体験をより豊かにします。
+			</p>
+
+			<h2>主な機能</h2>
+			<div class="feature-grid">
+				<div class="feature-card">
+					<h4>📁 フォルダー管理</h4>
+					<p>
+						ワールドをカテゴリー別にフォルダーで整理できます。公開・非公開の設定も可能です。
+					</p>
+				</div>
+				<div class="feature-card">
+					<h4>🔍 検索・並び替え</h4>
+					<p>
+						ワールド名での検索や、追加日時・名前での並び替えが可能です。
+					</p>
+				</div>
+				<div class="feature-card">
+					<h4>📝 コメント機能</h4>
+					<p>各ワールドに個人的なメモやコメントを残せます。</p>
+				</div>
+				<div class="feature-card">
+					<h4>🔗 共有機能</h4>
+					<p>公開フォルダーは他のユーザーと共有できます。</p>
+				</div>
+				<div class="feature-card">
+					<h4>🔐 セキュア認証</h4>
+					<p>
+						AWS
+						Cognitoによる安全なユーザー認証システムを採用しています。
+					</p>
+				</div>
+			</div>
+
+			<h2>プライバシーと安全性</h2>
+			<p>
+				本サービスでは、ユーザーのプライバシーと安全性を最重要視しています。
+				個人情報は暗号化されて保存され、必要最小限の情報のみを収集しています。
+				詳細については<a href="/privacy" style="color: #667eea;"
+					>プライバシーポリシー</a
+				>をご確認ください。
+			</p>
+
+			<div class="version-info">
+				<strong>🔄 注意点</strong><br />
+				本サービスはベータ版です。予期せぬ不具合が発生する可能性があります。
+				また、表示されている情報については正確であること、およぼ最新であることを保証するものではありません。
+				ご利用は自己責任でお願いいたします。
+			</div>
+
+			<div style="text-align: center;">
+				<a href="/" class="back-button">トップページに戻る</a>
+			</div>
+		</div>
+	</body>
+</html>
