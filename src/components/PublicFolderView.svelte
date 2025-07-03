@@ -650,6 +650,32 @@
 	}
 
 	@media (max-width: 768px) {
+		.folder-info {
+			padding: 1rem 0.5rem 0.5rem;
+		}
+		
+		.worlds-container {
+			padding: 0.5rem;
+		}
+		
+		.sorting-controls {
+			padding: 1rem 0.5rem;
+			margin: 0.5rem;
+		}
+		
+		.folder-header {
+			padding: 1.5rem 1rem;
+		}
+		
+		.folder-title {
+			font-size: 1.5rem;
+		}
+		
+		.worlds-grid {
+			grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+			gap: 1rem;
+		}
+		
 		.header-content {
 			flex-direction: column;
 			gap: 1rem;
