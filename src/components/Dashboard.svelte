@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from "svelte";
-	import { CognitoAuthService } from "../lib/cognito-auth.ts";
+	import { firebaseAuth } from "../lib/firebase-auth";
+	import { apiService } from "../lib/api-service";
 	import SharedHeader from "./SharedHeader.svelte";
 	import FolderSidebar from "./FolderSidebar.svelte";
 	import FolderTitle from "./FolderTitle.svelte";
@@ -21,8 +22,7 @@
 	let currentPage = 1;
 	let totalPages = 1;
 	let userId = "";
-	let authToken = "";
-	let cognitoSubUserId = "";
+	let userInfo = null;
 	let loading = true;
 	let error = "";
 	let success = "";
@@ -49,161 +49,9 @@
 
 	// Configuration
 	const CONFIG = {
-		API_BASE_URL:
-			import.meta.env.PUBLIC_API_BASE_URL || "http://localhost:8787",
 		PAGE_SIZE: 10,
 		DEFAULT_PAGE: 1,
 	};
-
-	// API Service
-	class ApiService {
-		constructor(baseUrl) {
-			this.baseUrl = baseUrl;
-		}
-
-		async fetchFolders(token) {
-			const url = `${this.baseUrl}/v2/folders`;
-
-			const response = await fetch(url, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-
-		async createFolder(token, folderData) {
-			const url = `${this.baseUrl}/v2/folders`;
-			const response = await fetch(url, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify(folderData),
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-
-		async updateFolder(token, folderId, folderData) {
-			const formattedId = String(folderId).padStart(8, "0");
-			const url = `${this.baseUrl}/v2/folders/${formattedId}`;
-			const response = await fetch(url, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify(folderData),
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-
-		async deleteFolder(token, folderId) {
-			const formattedId = String(folderId).padStart(8, "0");
-			const url = `${this.baseUrl}/v2/folders/${formattedId}`;
-			const response = await fetch(url, {
-				method: "DELETE",
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-
-		async fetchFolderItems(token, folderId) {
-			const formattedId = String(folderId).padStart(8, "0");
-			const url = `${this.baseUrl}/v2/folders/${formattedId}/items`;
-			const response = await fetch(url, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-
-		async addWorldToFolder(token, folderId, worldData) {
-			const formattedId = String(folderId).padStart(8, "0");
-			const url = `${this.baseUrl}/v2/folders/${formattedId}/items`;
-			const response = await fetch(url, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify(worldData),
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-
-		async updateWorldComment(token, folderId, worldId, comment) {
-			const formattedId = String(folderId).padStart(8, "0");
-			const url = `${this.baseUrl}/v2/folders/${formattedId}/items/${worldId}`;
-			const response = await fetch(url, {
-				method: "PUT",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify({ comment }),
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-
-		async removeWorldFromFolder(token, folderId, worldId) {
-			const formattedId = String(folderId).padStart(8, "0");
-			const url = `${this.baseUrl}/v2/folders/${formattedId}/items/${worldId}`;
-			const response = await fetch(url, {
-				method: "DELETE",
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-
-		async addWorldToMaster(token, worldId) {
-			const url = `${this.baseUrl}/v2/worlds`;
-			const response = await fetch(url, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify({ world_id: worldId }),
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-	}
-
-	const apiService = new ApiService(CONFIG.API_BASE_URL);
 
 	// Helper functions
 	function formatFolderId(folderId) {
@@ -395,21 +243,22 @@
 		error = "";
 
 		try {
-			const foldersData = await apiService.fetchFolders(authToken);
-			folders = foldersData;
+			// フォルダ一覧を取得
+			const foldersResponse = await apiService.getFolders();
+			if (foldersResponse.success) {
+				folders = foldersResponse.data || [];
+			}
 
-			// Update currentFolder reference to the latest data
-			if (currentFolder) {
-				const updatedCurrentFolder = folders.find(
-					(f) => f.id === currentFolder.id,
-				);
-				if (updatedCurrentFolder) {
-					currentFolder = updatedCurrentFolder;
-				} else {
-					// Current folder was deleted, select the first available folder
-					currentFolder = folders.length > 0 ? folders[0] : null;
-				}
-			} else if (folders.length > 0) {
+			// フォルダが無い場合はデフォルトフォルダを作成
+			if (folders.length === 0) {
+				folders = [{
+					id: "00000001",
+					name: "すべてのワールド", 
+					description: "追加されたワールド"
+				}];
+			}
+			
+			if (folders.length > 0 && !currentFolder) {
 				currentFolder = folders[0];
 			}
 
@@ -429,14 +278,16 @@
 				return;
 			}
 
-			const worldsDataResult = await apiService.fetchFolderItems(
-				authToken,
-				currentFolder.id,
-			);
+			const response = await apiService.getFolderItems(currentFolder.id);
+			if (!response.success) {
+				throw new Error(response.error || "ワールドの取得に失敗しました");
+			}
+
 			resetPagination();
 			searchQuery = ""; // Reset search query when changing folders
 			clearSearchFlag = !clearSearchFlag; // Toggle to trigger SearchBox reset
-			setWorldsData(worldsDataResult);
+			
+			setWorldsData(response.data || []);
 		} catch (err) {
 			console.error("Error loading worlds:", err);
 			showError("ワールドの読み込みに失敗しました。");
@@ -464,7 +315,10 @@
 		const folderId = data.folderId;
 		if (confirm("このフォルダとその中のすべてのワールドを削除しますか？")) {
 			try {
-				await apiService.deleteFolder(authToken, folderId);
+				const response = await apiService.deleteFolder(folderId);
+				if (!response.success) {
+					throw new Error(response.error || "フォルダの削除に失敗しました");
+				}
 				showSuccess("フォルダを削除しました。");
 				await loadData();
 			} catch (err) {
@@ -483,23 +337,25 @@
 			return;
 		}
 
-		if (!currentFolder) {
-			showError("ワールドを追加するフォルダを選択してください。");
-			return;
-		}
-
 		try {
+			// まずマスターにワールドを追加
 			try {
-				await apiService.addWorldToMaster(authToken, worldId);
+				await apiService.createWorld({ world_id: worldId });
 			} catch (err) {
+				// 409エラー（既に存在）は無視
 				if (!err.message.includes("409")) {
 					throw err;
 				}
 			}
 
-			await apiService.addWorldToFolder(authToken, currentFolder.id, {
-				world_id: worldId,
+			// フォルダにワールドを追加
+			const response = await apiService.addWorldToFolder(currentFolder.id, {
+				world_id: worldId
 			});
+			
+			if (!response.success) {
+				throw new Error(response.error || "ワールドの追加に失敗しました");
+			}
 
 			showSuccess("ワールドを追加しました。");
 			await loadWorldsForCurrentFolder();
@@ -519,12 +375,15 @@
 		const { worldId, comment } = data;
 
 		try {
-			await apiService.updateWorldComment(
-				authToken,
+			const response = await apiService.updateWorldComment(
 				currentFolder.id,
 				worldId,
-				comment,
+				comment
 			);
+			
+			if (!response.success) {
+				throw new Error(response.error || "コメントの更新に失敗しました");
+			}
 
 			// Update local state
 			const world = allWorldsData.find((w) => w.world_id === worldId);
@@ -545,11 +404,15 @@
 
 		if (confirm("このワールドをフォルダから削除しますか？")) {
 			try {
-				await apiService.removeWorldFromFolder(
-					authToken,
+				const response = await apiService.removeWorldFromFolder(
 					currentFolder.id,
-					worldId,
+					worldId
 				);
+				
+				if (!response.success) {
+					throw new Error(response.error || "ワールドの削除に失敗しました");
+				}
+				
 				showSuccess("ワールドを削除しました。");
 				await loadWorldsForCurrentFolder();
 			} catch (err) {
@@ -637,11 +500,18 @@
 		const { folderData, isEditing, folderId } = data;
 
 		try {
+			let response;
 			if (isEditing) {
-				await apiService.updateFolder(authToken, folderId, folderData);
+				response = await apiService.updateFolder(folderId, folderData);
+				if (!response.success) {
+					throw new Error(response.error || "フォルダの更新に失敗しました");
+				}
 				showSuccess("フォルダを更新しました。");
 			} else {
-				await apiService.createFolder(authToken, folderData);
+				response = await apiService.createFolder(folderData);
+				if (!response.success) {
+					throw new Error(response.error || "フォルダの作成に失敗しました");
+				}
 				showSuccess("フォルダを作成しました。");
 			}
 
@@ -665,79 +535,40 @@
 
 	// Initialize on mount
 	onMount(async () => {
-		// Check for legacy userId first (backward compatibility)
-		const storedUserId = localStorage.getItem("userId");
-		if (storedUserId) {
-			userId = storedUserId;
-			authToken = "legacy"; // Use a placeholder for legacy mode
-			loadData();
-			return;
-		}
-
-		// Check new Cognito authentication (auth_tokens format)
-		try {
-			const authTokensStr = localStorage.getItem("auth_tokens");
-			if (authTokensStr) {
-				const authTokens = JSON.parse(authTokensStr);
-				const idToken = authTokens.idToken;
-
-				if (!idToken) {
-					console.error("No idToken in auth_tokens");
-					window.location.href = "/";
-					return;
-				}
-
-				// Verify token is not expired
-				const tokenPayload = JSON.parse(atob(idToken.split(".")[1]));
-				if (tokenPayload.exp * 1000 < Date.now()) {
-					localStorage.removeItem("auth_tokens");
-					window.location.href = "/";
-					return;
-				}
-
-				// Extract user info from token
-				const userEmail =
-					tokenPayload.email || tokenPayload["cognito:username"];
-				userId = userEmail;
-				cognitoSubUserId = tokenPayload.sub || userEmail;
-				authToken = idToken;
-
-				loadData();
-				return;
-			}
-		} catch (error) {
-			console.error("Error parsing auth_tokens:", error);
-		}
-
-		// Fallback: Check old format for backward compatibility
-		const idToken = localStorage.getItem("idToken");
-		const userEmail = localStorage.getItem("userEmail");
-
-		if (!idToken || !userEmail) {
+		// 初回認証状態チェック
+		const currentUser = await firebaseAuth.getCurrentUser();
+		
+		if (!currentUser) {
+			// 認証されていない場合はログインページにリダイレクト（一度だけ）
 			window.location.href = "/";
 			return;
 		}
 
-		// Verify token is not expired
-		try {
-			const tokenPayload = JSON.parse(atob(idToken.split(".")[1]));
-			if (tokenPayload.exp * 1000 < Date.now()) {
-				localStorage.removeItem("idToken");
-				localStorage.removeItem("accessToken");
-				localStorage.removeItem("refreshToken");
-				localStorage.removeItem("userEmail");
+		// ユーザー情報を設定
+		userInfo = firebaseAuth.getUserInfo();
+		userId = currentUser.email || currentUser.uid;
+
+		// 認証状態の変更を監視（ログアウト時のみ処理）
+		const unsubscribe = firebaseAuth.onAuthStateChanged(async (user) => {
+			if (!user && userInfo) {
+				// ログアウトされた場合のみリダイレクト
 				window.location.href = "/";
 				return;
 			}
+		});
 
-			userId = userEmail;
-			cognitoSubUserId = tokenPayload.sub || userEmail;
-			authToken = idToken;
-			loadData();
+		try {
+			// データを読み込み
+			await loadData();
 		} catch (error) {
-			console.error("Authentication check failed:", error);
-			window.location.href = "/";
+			console.error("Data loading failed:", error);
+			showError("データの読み込みに失敗しました。");
 		}
+
+		// Cleanup function
+		return () => {
+			unsubscribe();
+		};
 	});
 </script>
 
@@ -882,7 +713,7 @@
 	<ShareModal
 		isVisible={showShareModal}
 		folderData={currentFolder}
-		userId={cognitoSubUserId || userId}
+		userId={userInfo?.uid || userId}
 		onclose={handleCloseShareModal}
 	/>
 </div>

@@ -83,83 +83,6 @@ import Footer from '../components/Footer.astro';
 				font-size: 1.2rem;
 			}
 
-			.input-group {
-				margin-bottom: 1.5rem;
-			}
-
-			label {
-				display: block;
-				margin-bottom: 0.5rem;
-				color: #555;
-				font-weight: 500;
-			}
-
-			input[type="password"] {
-				width: 100%;
-				padding: 0.75rem;
-				border: 2px solid #ddd;
-				border-radius: 6px;
-				font-size: 1rem;
-				transition: border-color 0.3s ease;
-				box-sizing: border-box;
-			}
-
-			input[type="password"]:focus {
-				outline: none;
-				border-color: #667eea;
-			}
-
-			.password-requirements {
-				font-size: 0.85rem;
-				color: #666;
-				margin-top: 0.5rem;
-			}
-
-			.change-password-button {
-				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				color: white;
-				border: none;
-				padding: 0.75rem 2rem;
-				font-size: 1rem;
-				font-weight: 600;
-				border-radius: 6px;
-				cursor: pointer;
-				transition:
-					transform 0.2s ease,
-					box-shadow 0.2s ease;
-				width: 100%;
-			}
-
-			.change-password-button:hover {
-				transform: translateY(-2px);
-				box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-			}
-
-			.change-password-button:disabled {
-				opacity: 0.6;
-				cursor: not-allowed;
-				transform: none;
-				box-shadow: none;
-			}
-
-			.message {
-				padding: 0.75rem;
-				border-radius: 6px;
-				margin-bottom: 1rem;
-				display: none;
-			}
-
-			.error-message {
-				background: #ffe6e6;
-				color: #d73a49;
-				border: 1px solid #f5b7b1;
-			}
-
-			.success-message {
-				background: #e6ffe6;
-				color: #28a745;
-				border: 1px solid #b7f5b7;
-			}
 
 			.user-info {
 				background: #e3f2fd;
@@ -171,6 +94,36 @@ import Footer from '../components/Footer.astro';
 			.user-email {
 				font-weight: 600;
 				color: #1976d2;
+			}
+
+			.profile-section {
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+			}
+
+			.profile-image {
+				width: 60px;
+				height: 60px;
+				border-radius: 50%;
+				object-fit: cover;
+			}
+
+			.logout-button {
+				background: #dc3545;
+				color: white;
+				border: none;
+				padding: 0.75rem 2rem;
+				font-size: 1rem;
+				font-weight: 600;
+				border-radius: 6px;
+				cursor: pointer;
+				transition: background-color 0.3s ease;
+				width: 100%;
+			}
+
+			.logout-button:hover {
+				background: #c82333;
 			}
 		</style>
 	</head>
@@ -187,187 +140,65 @@ import Footer from '../components/Footer.astro';
 			<div class="section">
 				<h2>アカウント情報</h2>
 				<div class="user-info">
-					<div>メールアドレス: <span class="user-email" id="userEmail">読み込み中...</span></div>
+					<div class="profile-section">
+						<img id="profileImage" class="profile-image" style="display: none;" alt="プロフィール画像" />
+						<div>
+							<div>表示名: <span class="user-email" id="displayName">読み込み中...</span></div>
+							<div>メールアドレス: <span class="user-email" id="userEmail">読み込み中...</span></div>
+						</div>
+					</div>
 				</div>
 			</div>
 
 			<div class="section">
-				<h2>パスワード変更</h2>
-				<div id="errorMessage" class="message error-message"></div>
-				<div id="successMessage" class="message success-message"></div>
-				
-				<form id="changePasswordForm">
-					<div class="input-group">
-						<label for="currentPassword">現在のパスワード</label>
-						<input
-							type="password"
-							id="currentPassword"
-							name="currentPassword"
-							required
-							placeholder="現在のパスワード"
-						/>
-					</div>
-					<div class="input-group">
-						<label for="newPassword">新しいパスワード</label>
-						<input
-							type="password"
-							id="newPassword"
-							name="newPassword"
-							required
-							placeholder="新しいパスワード"
-						/>
-						<div class="password-requirements">
-							※ 8文字以上、大文字・小文字・数字を含む必要があります
-						</div>
-					</div>
-					<div class="input-group">
-						<label for="confirmPassword">新しいパスワード（確認）</label>
-						<input
-							type="password"
-							id="confirmPassword"
-							name="confirmPassword"
-							required
-							placeholder="新しいパスワード（確認）"
-						/>
-					</div>
-					<button type="submit" class="change-password-button" id="changePasswordButton">
-						パスワードを変更
-					</button>
-				</form>
+				<h2>アカウント管理</h2>
+				<p>Googleアカウントで認証しています。パスワードの変更はGoogleアカウントの設定から行ってください。</p>
+				<button class="logout-button" id="logoutButton">ログアウト</button>
 				</div>
 			</div>
 		</div>
 
 		<Footer />
 
-		<script
-			define:vars={{
-				cognitoRegion: import.meta.env.PUBLIC_COGNITO_REGION,
-				cognitoUserPoolId: import.meta.env.PUBLIC_COGNITO_USER_POOL_ID,
-				cognitoClientId: import.meta.env.PUBLIC_COGNITO_CLIENT_ID,
-			}}
-		>
-			const CONFIG = {
-				COGNITO_USER_POOL_ID: cognitoUserPoolId,
-				COGNITO_CLIENT_ID: cognitoClientId,
-				AWS_REGION: cognitoRegion,
-			};
-
-			class CognitoAuth {
-				constructor(config) {
-					this.config = config;
-				}
-
-				async changePassword(accessToken, previousPassword, proposedPassword) {
-					const response = await fetch(
-						`https://cognito-idp.${this.config.AWS_REGION}.amazonaws.com/`,
-						{
-							method: "POST",
-							headers: {
-								"Content-Type": "application/x-amz-json-1.1",
-								"X-Amz-Target": "AWSCognitoIdentityProviderService.ChangePassword",
-							},
-							body: JSON.stringify({
-								AccessToken: accessToken,
-								PreviousPassword: previousPassword,
-								ProposedPassword: proposedPassword,
-							}),
-						},
-					);
-
-					if (!response.ok) {
-						const error = await response.json();
-						throw new Error(error.message || "パスワード変更に失敗しました");
-					}
-
-					return await response.json();
-				}
-			}
-
-			const cognitoAuth = new CognitoAuth(CONFIG);
-
-			function showError(message) {
-				const errorDiv = document.getElementById("errorMessage");
-				errorDiv.textContent = message;
-				errorDiv.style.display = "block";
-				document.getElementById("successMessage").style.display = "none";
-			}
-
-			function showSuccess(message) {
-				const successDiv = document.getElementById("successMessage");
-				successDiv.textContent = message;
-				successDiv.style.display = "block";
-				document.getElementById("errorMessage").style.display = "none";
-			}
-
-			function hideMessages() {
-				document.getElementById("errorMessage").style.display = "none";
-				document.getElementById("successMessage").style.display = "none";
-			}
+		<script type="module">
+			import { firebaseAuth } from '../lib/firebase-auth';
 
 			// 認証チェック
-			const accessToken = localStorage.getItem("accessToken");
-			const userEmail = localStorage.getItem("userEmail");
-
-			if (!accessToken) {
+			const currentUser = await firebaseAuth.getCurrentUser();
+			if (!currentUser) {
 				window.location.href = "/";
 				return;
 			}
 
 			// ユーザー情報表示
-			if (userEmail) {
-				document.getElementById("userEmail").textContent = userEmail;
+			const userInfo = firebaseAuth.getUserInfo();
+			if (userInfo) {
+				document.getElementById("displayName").textContent = 
+					userInfo.displayName || 'なし';
+				document.getElementById("userEmail").textContent = 
+					userInfo.email || 'なし';
+				
+				if (userInfo.photoURL) {
+					const profileImage = document.getElementById("profileImage");
+					profileImage.src = userInfo.photoURL;
+					profileImage.style.display = "block";
+				}
 			}
 
-			// パスワード変更フォーム
-			document.getElementById("changePasswordForm").addEventListener("submit", async function (e) {
-				e.preventDefault();
-				hideMessages();
-
-				const currentPassword = document.getElementById("currentPassword").value;
-				const newPassword = document.getElementById("newPassword").value;
-				const confirmPassword = document.getElementById("confirmPassword").value;
-
-				if (!currentPassword || !newPassword || !confirmPassword) {
-					showError("すべての項目を入力してください。");
-					return;
-				}
-
-				if (newPassword !== confirmPassword) {
-					showError("新しいパスワードが一致しません。");
-					return;
-				}
-
-				if (newPassword.length < 8) {
-					showError("新しいパスワードは8文字以上で入力してください。");
-					return;
-				}
-
-				// パスワード強度チェック
-				const hasUpperCase = /[A-Z]/.test(newPassword);
-				const hasLowerCase = /[a-z]/.test(newPassword);
-				const hasNumbers = /\d/.test(newPassword);
-
-				if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
-					showError("新しいパスワードには大文字、小文字、数字を含む必要があります。");
-					return;
-				}
-
-				const changeButton = document.getElementById("changePasswordButton");
-				changeButton.disabled = true;
-				changeButton.textContent = "変更中...";
-
-				try {
-					await cognitoAuth.changePassword(accessToken, currentPassword, newPassword);
-					showSuccess("パスワードが正常に変更されました。");
-					
-					// フォームをリセット
-					document.getElementById("changePasswordForm").reset();
-				} catch (error) {
-					showError(error.message);
-				} finally {
-					changeButton.disabled = false;
-					changeButton.textContent = "パスワードを変更";
+			// ログアウトボタン
+			document.getElementById("logoutButton").addEventListener("click", async function() {
+				if (confirm("ログアウトしますか？")) {
+					try {
+						const result = await firebaseAuth.signOut();
+						if (result.success) {
+							window.location.href = "/";
+						} else {
+							alert("ログアウトに失敗しました: " + result.error);
+						}
+					} catch (error) {
+						console.error("Logout error:", error);
+						alert("ログアウトに失敗しました");
+					}
 				}
 			});
 		</script>

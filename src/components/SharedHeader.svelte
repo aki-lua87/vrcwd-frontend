@@ -1,51 +1,43 @@
 <script>
 	import { onMount } from 'svelte';
-	import { CognitoAuthService } from '../lib/cognito-auth.ts';
+	import { firebaseAuth } from '../lib/firebase-auth';
 	
 	let isLoggedIn = false;
 	let currentUserId = '';
 	let currentPath = '';
+	let userInfo = null;
+	let unsubscribe = null;
 	
-	onMount(async () => {
+	onMount(() => {
 		currentPath = window.location.pathname;
-		await checkAuthStatus();
-	});
-	
-	async function checkAuthStatus() {
-		try {
-			// Check for legacy userId first
-			const storedUserId = localStorage.getItem("userId");
-			if (storedUserId) {
+		
+		// Firebase認証状態の監視
+		unsubscribe = firebaseAuth.onAuthStateChanged((user) => {
+			if (user) {
 				isLoggedIn = true;
-				currentUserId = storedUserId;
-				return;
+				userInfo = firebaseAuth.getUserInfo();
+				currentUserId = userInfo?.displayName || userInfo?.email || 'ユーザー';
+			} else {
+				isLoggedIn = false;
+				currentUserId = '';
+				userInfo = null;
 			}
+		});
 
-			// Check Cognito authentication
-			const idToken = localStorage.getItem('idToken');
-			const userEmail = localStorage.getItem('userEmail');
-			
-			if (idToken && userEmail) {
-				// Verify token is not expired
-				const tokenPayload = JSON.parse(atob(idToken.split('.')[1]));
-				if (tokenPayload.exp * 1000 > Date.now()) {
-					isLoggedIn = true;
-					currentUserId = userEmail;
-				}
+		// Cleanup function
+		return () => {
+			if (unsubscribe) {
+				unsubscribe();
 			}
-		} catch (error) {
-			console.error('Auth check error:', error);
-			isLoggedIn = false;
-			currentUserId = '';
-		}
-	}
+		};
+	});
 	
 	function goToDashboard() {
 		window.location.href = "/dashboard";
 	}
 	
 	function goToLogin() {
-		window.location.href = "/login";
+		window.location.href = "/";
 	}
 	
 	function goToSettings() {
@@ -54,25 +46,17 @@
 	
 	async function logout() {
 		try {
-			// Check for legacy userId first
-			const storedUserId = localStorage.getItem("userId");
-			if (storedUserId) {
-				localStorage.removeItem("userId");
+			const result = await firebaseAuth.signOut();
+			if (result.success) {
 				window.location.href = "/";
-				return;
+			} else {
+				console.error('Logout error:', result.error);
+				// Force logout by redirecting anyway
+				window.location.href = "/";
 			}
-
-			// Cognito logout - just clear tokens
-			localStorage.removeItem('idToken');
-			localStorage.removeItem('accessToken');
-			localStorage.removeItem('refreshToken');
-			localStorage.removeItem('userEmail');
-			
-			window.location.href = "/";
 		} catch (error) {
 			console.error('Logout error:', error);
-			// Force logout by clearing local storage and redirecting
-			localStorage.clear();
+			// Force logout by redirecting anyway
 			window.location.href = "/";
 		}
 	}

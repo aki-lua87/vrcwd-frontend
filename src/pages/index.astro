@@ -1,5 +1,6 @@
 ---
 import Footer from '../components/Footer.astro';
+import FirebaseLogin from '../components/FirebaseLogin.svelte';
 ---
 
 <html lang="ja">
@@ -48,270 +49,27 @@ import Footer from '../components/Footer.astro';
 				font-weight: 400;
 			}
 
-			.login-container {
-				background: white;
-				padding: 2rem;
-				border-radius: 12px;
-				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-				width: 100%;
-				max-width: 400px;
-				text-align: center;
-			}
-
-			h2 {
-				color: #333;
-				margin-bottom: 1.5rem;
-				font-size: 1.8rem;
-			}
-
-			.input-group {
-				margin-bottom: 1.5rem;
-				text-align: left;
-			}
-
-			label {
-				display: block;
-				margin-bottom: 0.5rem;
-				color: #555;
-				font-weight: 500;
-			}
-
-			input[type="email"],
-			input[type="password"] {
-				width: 100%;
-				padding: 0.75rem;
-				border: 2px solid #ddd;
-				border-radius: 6px;
-				font-size: 1rem;
-				transition: border-color 0.3s ease;
-				box-sizing: border-box;
-			}
-
-			input[type="email"]:focus,
-			input[type="password"]:focus {
-				outline: none;
-				border-color: #667eea;
-			}
-
-			.login-button {
-				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				color: white;
-				border: none;
-				padding: 0.75rem 2rem;
-				font-size: 1rem;
-				font-weight: 600;
-				border-radius: 6px;
-				cursor: pointer;
-				transition:
-					transform 0.2s ease,
-					box-shadow 0.2s ease;
-				width: 100%;
-				margin-bottom: 1rem;
-			}
-
-			.login-button:hover {
-				transform: translateY(-2px);
-				box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-			}
-
-			.login-button:disabled {
-				opacity: 0.6;
-				cursor: not-allowed;
-				transform: none;
-				box-shadow: none;
-			}
-
-			.error-message {
-				background: #ffe6e6;
-				color: #d73a49;
-				padding: 0.75rem;
-				border-radius: 6px;
-				margin-top: 1rem;
-				border: 1px solid #f5b7b1;
-				display: none;
-			}
-
-			.links {
-				text-align: center;
-				margin-top: 1rem;
-			}
-
-			.links a {
-				color: #667eea;
-				text-decoration: none;
-				margin: 0 0.5rem;
-				font-size: 0.9rem;
-			}
-
-			.links a:hover {
-				text-decoration: underline;
-			}
 		</style>
 	</head>
 	<body>
 		<div class="main-content">
 			<h1 class="site-title">VRChat Worlds Dashboard</h1>
 			<p class="site-subtitle">VRChatワールドを効率的に管理・整理</p>
-			<div class="login-container">
-				<h2>サインイン</h2>
-			<form id="loginForm">
-				<div class="input-group">
-					<label for="email">メールアドレス</label>
-					<input
-						type="email"
-						id="email"
-						name="email"
-						required
-						placeholder="example@email.com"
-					/>
-				</div>
-				<div class="input-group">
-					<label for="password">パスワード</label>
-					<input
-						type="password"
-						id="password"
-						name="password"
-						required
-						placeholder="パスワード"
-					/>
-				</div>
-				<button type="submit" class="login-button" id="loginButton"
-					>サインイン</button
-				>
-			</form>
-
-			<div class="error-message" id="errorMessage"></div>
-
-			<div class="links">
-				<a href="/signup">アカウント作成</a>
-				<br />
-				<a href="/reset-password">パスワードを忘れた方</a>
-				</div>
-			</div>
+			<FirebaseLogin client:load />
 		</div>
 		<Footer />
 
-		<script
-			define:vars={{
-				cognitoRegion: import.meta.env.PUBLIC_COGNITO_REGION,
-				cognitoUserPoolId: import.meta.env.PUBLIC_COGNITO_USER_POOL_ID,
-				cognitoClientId: import.meta.env.PUBLIC_COGNITO_CLIENT_ID,
-			}}
-		>
-			const CONFIG = {
-				COGNITO_USER_POOL_ID: cognitoUserPoolId,
-				COGNITO_CLIENT_ID: cognitoClientId,
-				AWS_REGION: cognitoRegion,
-			};
-
-			class CognitoAuth {
-				constructor(config) {
-					this.config = config;
+		<script define:vars={{ /* empty for astro */ }}>
+			// 既にログイン済みかどうかをローカルストレージでチェック
+			document.addEventListener('DOMContentLoaded', () => {
+				const firebaseIdToken = localStorage.getItem('firebase_id_token');
+				const firebaseUser = localStorage.getItem('firebase_user');
+				
+				if (firebaseIdToken && firebaseUser) {
+					// 既にログイン済みの場合はダッシュボードにリダイレクト
+					window.location.href = '/dashboard';
 				}
-
-				async signIn(email, password) {
-					const response = await fetch(
-						`https://cognito-idp.${this.config.AWS_REGION}.amazonaws.com/`,
-						{
-							method: "POST",
-							headers: {
-								"Content-Type": "application/x-amz-json-1.1",
-								"X-Amz-Target":
-									"AWSCognitoIdentityProviderService.InitiateAuth",
-							},
-							body: JSON.stringify({
-								AuthFlow: "USER_PASSWORD_AUTH",
-								ClientId: this.config.COGNITO_CLIENT_ID,
-								AuthParameters: {
-									USERNAME: email,
-									PASSWORD: password,
-								},
-							}),
-						},
-					);
-
-					if (!response.ok) {
-						const error = await response.json();
-						throw new Error(
-							error.message || "サインインに失敗しました",
-						);
-					}
-
-					return await response.json();
-				}
-			}
-
-			const cognitoAuth = new CognitoAuth(CONFIG);
-
-			function showError(message) {
-				const errorDiv = document.getElementById("errorMessage");
-				errorDiv.textContent = message;
-				errorDiv.style.display = "block";
-			}
-
-			function hideError() {
-				document.getElementById("errorMessage").style.display = "none";
-			}
-
-			// 既にサインインしている場合はダッシュボードにリダイレクト
-			if (localStorage.getItem("idToken")) {
-				window.location.href = "/dashboard";
-			}
-
-			const loginForm = document.getElementById("loginForm");
-
-			if (loginForm) {
-				loginForm.addEventListener("submit", async function (e) {
-					e.preventDefault();
-					hideError();
-
-					const email = document.getElementById("email").value.trim();
-					const password = document.getElementById("password").value;
-
-					if (!email || !password) {
-						showError(
-							"メールアドレスとパスワードを入力してください。",
-						);
-						return;
-					}
-
-					const loginButton = document.getElementById("loginButton");
-					loginButton.disabled = true;
-					loginButton.textContent = "サインイン中...";
-
-					try {
-						const result = await cognitoAuth.signIn(
-							email,
-							password,
-						);
-
-						if (result.AuthenticationResult) {
-							localStorage.setItem(
-								"accessToken",
-								result.AuthenticationResult.AccessToken,
-							);
-							localStorage.setItem(
-								"idToken",
-								result.AuthenticationResult.IdToken,
-							);
-							localStorage.setItem(
-								"refreshToken",
-								result.AuthenticationResult.RefreshToken,
-							);
-							localStorage.setItem("userEmail", email);
-
-							window.location.href = "/dashboard";
-						} else {
-							showError("認証情報が不正です。");
-						}
-					} catch (error) {
-						showError(error.message);
-					} finally {
-						loginButton.disabled = false;
-						loginButton.textContent = "サインイン";
-					}
-				});
-			}
+			});
 		</script>
 	</body>
 </html>
