@@ -33,8 +33,7 @@
 	let sortOrder = "desc"; // 'asc' or 'desc'
 
 	const CONFIG = {
-		API_BASE_URL:
-			import.meta.env.PUBLIC_API_BASE_URL || "http://localhost:8787",
+		API_BASE_URL: import.meta.env.PUBLIC_API_BASE_URL,
 		PAGE_SIZE: 12,
 	};
 
@@ -271,8 +270,7 @@
 				// 現在のフォルダがお気に入りに含まれているかチェック
 				isFavorited = favoritesFolders.some(
 					(f) =>
-						formatFolderId(f.folder_id) ==
-						formatFolderId(folderId),
+						formatFolderId(f.folder_id) == formatFolderId(folderId),
 				);
 			}
 		} catch (error) {
@@ -412,7 +410,9 @@
 				<div class="folder-info-content">
 					<h2 class="folder-title">📁 {folderData.folder_name}</h2>
 					{#if folderData.user_name && folderData.user_name.trim()}
-						<p class="folder-author">👤 作者: {folderData.user_name}</p>
+						<p class="folder-author">
+							👤 Author: {folderData.user_name}
+						</p>
 					{/if}
 					{#if folderData.comment}
 						<p class="folder-comment">{folderData.comment}</p>
@@ -626,8 +626,6 @@
 		color: #667eea;
 		font-weight: 500;
 		margin: 0 0 0.75rem 0;
-		display: flex;
-		align-items: center;
 		gap: 0.5rem;
 	}
 
