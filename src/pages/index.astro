@@ -1,15 +1,15 @@
 ---
-import Footer from '../components/Footer.astro';
-import FirebaseLogin from '../components/FirebaseLogin.svelte';
+import Footer from "../components/Footer.astro";
+import FirebaseLogin from "../components/FirebaseLogin.svelte";
 ---
 
 <html lang="ja">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<!-- <link rel="icon" type="image/svg+xml" href="/favicon.svg" /> -->
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>サインイン - VRChat Worlds Dashboard</title>
+		<title>サインイン - VRC Worlds Dashboard</title>
 		<style>
 			body {
 				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -48,26 +48,30 @@ import FirebaseLogin from '../components/FirebaseLogin.svelte';
 				text-align: center;
 				font-weight: 400;
 			}
-
 		</style>
 	</head>
 	<body>
 		<div class="main-content">
-			<h1 class="site-title">VRChat Worlds Dashboard</h1>
+			<h1 class="site-title">VRC Worlds Dashboard</h1>
 			<p class="site-subtitle">VRChatワールドを効率的に管理・整理</p>
 			<FirebaseLogin client:load />
 		</div>
 		<Footer />
 
-		<script define:vars={{ /* empty for astro */ }}>
+		<script
+			define:vars={{
+				/* empty for astro */
+			}}
+		>
 			// 既にログイン済みかどうかをローカルストレージでチェック
-			document.addEventListener('DOMContentLoaded', () => {
-				const firebaseIdToken = localStorage.getItem('firebase_id_token');
-				const firebaseUser = localStorage.getItem('firebase_user');
-				
+			document.addEventListener("DOMContentLoaded", () => {
+				const firebaseIdToken =
+					localStorage.getItem("firebase_id_token");
+				const firebaseUser = localStorage.getItem("firebase_user");
+
 				if (firebaseIdToken && firebaseUser) {
 					// 既にログイン済みの場合はダッシュボードにリダイレクト
-					window.location.href = '/dashboard';
+					window.location.href = "/dashboard";
 				}
 			});
 		</script>

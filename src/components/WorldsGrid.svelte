@@ -2,6 +2,7 @@
 	import WorldCard from "./WorldCard.svelte";
 
 	export let worldsData = [];
+	export let readonly = false; // Read-only mode for favorite folders
 
 	// Svelte 5 event props
 	export let onopenWorldDetails = () => {};
@@ -16,6 +17,7 @@
 		{#each worldsData as world (world.world_id)}
 			<WorldCard
 				{world}
+				{readonly}
 				{onopenWorldDetails}
 				{onsaveComment}
 				{onremoveFromFolder}

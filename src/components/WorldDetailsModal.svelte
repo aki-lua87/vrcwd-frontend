@@ -18,47 +18,18 @@
 		return String(folderId).padStart(8, "0");
 	}
 
-	$: if (isVisible && worldData) {
+	$: if (isVisible && worldData && folders.length > 0) {
 		loadWorldFolderStatus();
 	}
 
 	async function loadWorldFolderStatus() {
 		worldInFolders.clear();
 
-		const authToken = localStorage.getItem("idToken") || "legacy";
-
-		const apiService = {
-			async fetchFolderItems(token, folderId) {
-				const formattedId = formatFolderId(folderId);
-				if (!formattedId) {
-					throw new Error("無効なフォルダIDです。");
-				}
-				const url = `${import.meta.env.PUBLIC_API_BASE_URL || "http://localhost:8787"}/v2/folders/${formattedId}/items`;
-				const response = await fetch(url, {
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				});
-				if (!response.ok) {
-					throw new Error(`HTTP error! status: ${response.status}`);
-				}
-				return await response.json();
-			},
-		};
-
+		// フォルダ一覧は親コンポーネントから渡されるので、API呼び出しは不要
+		// 代わりに、フォルダ一覧から現在のワールドが含まれているかを確認
 		for (const folder of folders) {
-			try {
-				const items = await apiService.fetchFolderItems(
-					authToken,
-					folder.id,
-				);
-				if (
-					items.some((item) => item.world_id === worldData.world_id)
-				) {
-					worldInFolders.add(folder.id);
-				}
-			} catch (error) {
-				console.warn(`Failed to check folder ${folder.id}:`, error);
+			if (folder.worlds && folder.worlds.some(world => world.world_id === worldData.world_id)) {
+				worldInFolders.add(folder.id);
 			}
 		}
 		// Trigger reactivity

@@ -11,7 +11,7 @@ class ApiService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = import.meta.env.PUBLIC_API_BASE_URL || 'https://backend.jmnt34deg.workers.dev';
+    this.baseUrl = import.meta.env.PUBLIC_API_BASE_URL;
   }
 
   private async getAuthHeaders(): Promise<HeadersInit> {

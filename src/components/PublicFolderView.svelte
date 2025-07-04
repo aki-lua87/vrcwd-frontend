@@ -241,8 +241,7 @@
 			const currentUser = await firebaseAuth.getCurrentUser();
 			if (currentUser) {
 				isAuthenticated = true;
-				// ログイン済みユーザーのフォルダ情報があれば取得
-				// loadUserFolders();
+				authToken = await currentUser.getIdToken();
 			}
 		} catch (error) {
 			console.warn("Authentication check failed:", error);
@@ -487,7 +486,7 @@
 								onopenWorldDetails={handleOpenWorldDetails}
 								onsaveComment={() => {}}
 								onremoveFromFolder={handleRemoveFromFolder}
-								readonly={!isAuthenticated}
+								readonly={true}
 							/>
 						{/each}
 					</div>

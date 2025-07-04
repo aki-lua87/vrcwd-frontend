@@ -548,7 +548,7 @@
 		const { folderId, worldId, comment } = data;
 
 		try {
-			await apiService.addWorldToFolder(authToken, folderId, {
+			await apiService.addWorldToFolder(folderId, {
 				world_id: worldId,
 				comment: comment,
 			});
@@ -569,11 +569,7 @@
 		const { folderId, worldId } = data;
 
 		try {
-			await apiService.removeWorldFromFolder(
-				authToken,
-				folderId,
-				worldId,
-			);
+			await apiService.removeWorldFromFolder(folderId, worldId);
 			showSuccess("フォルダからワールドを削除しました。");
 
 			// Update main dashboard if the folder is currently selected
@@ -803,9 +799,7 @@
 					</div>
 				{:else}
 					{#if currentFolder && !currentFolder.is_favorite}
-						<WorldInput
-							onaddWorld={handleAddWorld}
-						/>
+						<WorldInput onaddWorld={handleAddWorld} />
 					{/if}
 
 					<Stats
@@ -853,6 +847,7 @@
 					{#key `${sortBy}-${sortOrder}-${currentPage}-${worldsData.length}`}
 						<WorldsGrid
 							{worldsData}
+							readonly={currentFolder?.is_favorite || false}
 							onopenWorldDetails={handleOpenWorldDetails}
 							onsaveComment={handleSaveComment}
 							onremoveFromFolder={handleRemoveFromFolder}
@@ -893,7 +888,7 @@
 	<ShareModal
 		isVisible={showShareModal}
 		folderData={currentFolder}
-		userId={userId}
+		{userId}
 		onclose={handleCloseShareModal}
 	/>
 </div>
@@ -941,7 +936,6 @@
 		flex: 1;
 		min-width: 0;
 	}
-
 
 	.loading {
 		text-align: center;
@@ -1172,6 +1166,5 @@
 		.sidebar-container {
 			min-width: unset;
 		}
-
 	}
 </style>

@@ -1,13 +1,13 @@
 <script>
-	export let userId = '';
-	
+	export let userId = "";
+
 	async function logout() {
 		try {
 			// Simple logout - clear local storage and redirect
 			localStorage.clear();
 			window.location.href = "/";
 		} catch (error) {
-			console.error('Logout error:', error);
+			console.error("Logout error:", error);
 			// Force logout by clearing local storage and redirecting
 			localStorage.clear();
 			window.location.href = "/";
@@ -17,7 +17,7 @@
 
 <div class="header">
 	<div class="header-content">
-		<h1>VRChat Worlds Dashboard</h1>
+		<h1>VRC Worlds Dashboard</h1>
 		<div class="user-info">
 			<span id="userDisplay">ユーザー: {userId}</span>
 			<button class="logout-btn" on:click={logout}>ログアウト</button>

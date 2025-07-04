@@ -17,13 +17,11 @@
 
 	function handleSearch() {
 		const query = searchQuery || "";
-		console.log("Stats: dispatching search event with query:", query);
 		dispatch("search", { query: query });
 	}
 
 	function handleClear() {
 		searchQuery = "";
-		console.log("Stats: cleared search query");
 		dispatch("search", { query: "" });
 	}
 
@@ -35,7 +33,6 @@
 
 	function handleInput() {
 		const query = searchQuery || "";
-		console.log("Stats: input changed to:", query);
 		handleSearch();
 	}
 </script>
