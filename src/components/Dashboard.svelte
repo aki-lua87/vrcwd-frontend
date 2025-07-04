@@ -4,6 +4,7 @@
 	import { apiService } from "../lib/api-service";
 	import SharedHeader from "./SharedHeader.svelte";
 	import FolderSidebar from "./FolderSidebar.svelte";
+	import FavoritesSidebar from "./FavoritesSidebar.svelte";
 	import FolderTitle from "./FolderTitle.svelte";
 	import Stats from "./Stats.svelte";
 	import WorldInput from "./WorldInput.svelte";
@@ -28,6 +29,7 @@
 	let success = "";
 	let searchQuery = "";
 	let clearSearchFlag = false;
+	let favoritesFolders = [];
 
 	// Sorting state
 	let sortBy = "addition_at"; // 'world_name' or 'addition_at'
@@ -55,7 +57,7 @@
 
 	// Helper functions
 	function formatFolderId(folderId) {
-		if (!folderId) return "";
+		if (!folderId || folderId === null || folderId === undefined) return "";
 		return String(folderId).padStart(8, "0");
 	}
 
@@ -106,14 +108,9 @@
 	function setWorldsData(data) {
 		// データの整合性を確保し、必要なプロパティの存在を保証
 		const safeData = data.map((item) => {
-			// addition_atプロパティへの安全なアクセスを確保
-			const additionAt = item.addition_at || item.created_at || null;
-			const createdAt = item.created_at || null;
-
 			return {
 				...item,
-				addition_at: additionAt,
-				created_at: createdAt,
+				addition_at: item.addition_at || null,
 				// プロパティアクセスを強制してオブジェクト構造を確定
 				world_name: item.world_name || "",
 				world_description: item.world_description || "",
@@ -138,8 +135,8 @@
 				return 0;
 			} else if (sortBy === "addition_at") {
 				// より堅牢な日付解析
-				aValue = parseTimestamp(a.addition_at || a.created_at);
-				bValue = parseTimestamp(b.addition_at || b.created_at);
+				aValue = parseTimestamp(a.addition_at);
+				bValue = parseTimestamp(b.addition_at);
 
 				// Numeric comparison for timestamps
 				return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
@@ -237,6 +234,45 @@
 		}, 8000);
 	}
 
+	// 公開フォルダ情報取得のヘルパー関数
+	async function fetchPublicFolderInfo(folderId) {
+		const formattedId = formatFolderId(folderId);
+		if (!formattedId) {
+			throw new Error("無効なフォルダIDです。");
+		}
+		const url = `${import.meta.env.PUBLIC_API_BASE_URL || "https://backend.jmnt34deg.workers.dev"}/v2/folders/${formattedId}/info`;
+		const response = await fetch(url);
+		if (!response.ok) {
+			if (response.status === 400) {
+				throw new Error("無効なフォルダID形式です。");
+			} else if (response.status === 404) {
+				throw new Error("フォルダが見つかりません。");
+			}
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		return await response.json();
+	}
+
+	async function fetchPublicFolderItems(userId, folderId) {
+		const formattedId = formatFolderId(folderId);
+		if (!formattedId) {
+			throw new Error("無効なフォルダIDです。");
+		}
+		const url = `${import.meta.env.PUBLIC_API_BASE_URL || "https://backend.jmnt34deg.workers.dev"}/v2/u/${userId}/folders/${formattedId}/items`;
+		const response = await fetch(url);
+		if (!response.ok) {
+			if (response.status === 404) {
+				throw new Error(
+					"フォルダが見つからないか、非公開に設定されています。",
+				);
+			} else if (response.status === 403) {
+				throw new Error("このフォルダは非公開です。");
+			}
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		return await response.json();
+	}
+
 	// Event handlers
 	async function loadData() {
 		loading = true;
@@ -249,16 +285,19 @@
 				folders = foldersResponse.data || [];
 			}
 
-			// フォルダが無い場合はデフォルトフォルダを作成
-			if (folders.length === 0) {
-				folders = [{
-					id: "00000001",
-					name: "すべてのワールド", 
-					description: "追加されたワールド"
-				}];
+			// お気に入りフォルダ一覧を取得
+			const favoritesResponse = await apiService.getFavorites();
+			if (favoritesResponse.success) {
+				favoritesFolders = favoritesResponse.data || [];
 			}
-			
-			if (folders.length > 0 && !currentFolder) {
+
+			// フォルダが無い場合の処理
+			if (folders.length === 0) {
+				// フォルダが存在しない場合はnullに設定
+				currentFolder = null;
+				setWorldsData([]);
+			} else if (!currentFolder) {
+				// フォルダが存在するが選択されていない場合は最初のフォルダを選択
 				currentFolder = folders[0];
 			}
 
@@ -280,13 +319,15 @@
 
 			const response = await apiService.getFolderItems(currentFolder.id);
 			if (!response.success) {
-				throw new Error(response.error || "ワールドの取得に失敗しました");
+				throw new Error(
+					response.error || "ワールドの取得に失敗しました",
+				);
 			}
 
 			resetPagination();
 			searchQuery = ""; // Reset search query when changing folders
 			clearSearchFlag = !clearSearchFlag; // Toggle to trigger SearchBox reset
-			
+
 			setWorldsData(response.data || []);
 		} catch (err) {
 			console.error("Error loading worlds:", err);
@@ -299,6 +340,49 @@
 		const folder = folders.find((f) => f.id == folderId);
 		currentFolder = folder;
 		loadWorldsForCurrentFolder();
+	}
+
+	async function handleSelectFavoriteFolder(data) {
+		const { folderId, userId: ownerId } = data;
+		// お気に入りフォルダの内容を取得してダッシュボードに表示
+		try {
+			loading = true;
+			error = "";
+
+			// お気に入りフォルダの情報を取得
+			const folderInfo = await fetchPublicFolderInfo(folderId);
+
+			if (folderInfo.is_private) {
+				throw new Error("このフォルダは非公開になっています。");
+			}
+
+			// お気に入りフォルダをcurrentFolderとして設定
+			currentFolder = {
+				id: formatFolderId(folderInfo.folder_id),
+				folder_name: folderInfo.folder_name,
+				comment: folderInfo.comment || "",
+				is_private: folderInfo.is_private,
+				user_id: folderInfo.user_id,
+				world_count: folderInfo.world_count,
+				is_favorite: true, // お気に入りフォルダであることを示すフラグ
+				owner_user_id: ownerId,
+			};
+
+			// お気に入りフォルダの中身を取得
+			const worlds = await fetchPublicFolderItems(ownerId, folderId);
+			resetPagination();
+			searchQuery = ""; // Reset search query when changing folders
+			clearSearchFlag = !clearSearchFlag; // Toggle to trigger SearchBox reset
+			setWorldsData(worlds);
+
+			loading = false;
+		} catch (err) {
+			console.error("Error loading favorite folder:", err);
+			showError(
+				"お気に入りフォルダの読み込みに失敗しました: " + err.message,
+			);
+			loading = false;
+		}
 	}
 
 	function handleCreateFolder() {
@@ -317,7 +401,9 @@
 			try {
 				const response = await apiService.deleteFolder(folderId);
 				if (!response.success) {
-					throw new Error(response.error || "フォルダの削除に失敗しました");
+					throw new Error(
+						response.error || "フォルダの削除に失敗しました",
+					);
 				}
 				showSuccess("フォルダを削除しました。");
 				await loadData();
@@ -349,12 +435,17 @@
 			}
 
 			// フォルダにワールドを追加
-			const response = await apiService.addWorldToFolder(currentFolder.id, {
-				world_id: worldId
-			});
-			
+			const response = await apiService.addWorldToFolder(
+				currentFolder.id,
+				{
+					world_id: worldId,
+				},
+			);
+
 			if (!response.success) {
-				throw new Error(response.error || "ワールドの追加に失敗しました");
+				throw new Error(
+					response.error || "ワールドの追加に失敗しました",
+				);
 			}
 
 			showSuccess("ワールドを追加しました。");
@@ -378,11 +469,13 @@
 			const response = await apiService.updateWorldComment(
 				currentFolder.id,
 				worldId,
-				comment
+				comment,
 			);
-			
+
 			if (!response.success) {
-				throw new Error(response.error || "コメントの更新に失敗しました");
+				throw new Error(
+					response.error || "コメントの更新に失敗しました",
+				);
 			}
 
 			// Update local state
@@ -406,13 +499,15 @@
 			try {
 				const response = await apiService.removeWorldFromFolder(
 					currentFolder.id,
-					worldId
+					worldId,
 				);
-				
+
 				if (!response.success) {
-					throw new Error(response.error || "ワールドの削除に失敗しました");
+					throw new Error(
+						response.error || "ワールドの削除に失敗しました",
+					);
 				}
-				
+
 				showSuccess("ワールドを削除しました。");
 				await loadWorldsForCurrentFolder();
 			} catch (err) {
@@ -504,19 +599,36 @@
 			if (isEditing) {
 				response = await apiService.updateFolder(folderId, folderData);
 				if (!response.success) {
-					throw new Error(response.error || "フォルダの更新に失敗しました");
+					throw new Error(
+						response.error || "フォルダの更新に失敗しました",
+					);
 				}
 				showSuccess("フォルダを更新しました。");
 			} else {
 				response = await apiService.createFolder(folderData);
 				if (!response.success) {
-					throw new Error(response.error || "フォルダの作成に失敗しました");
+					throw new Error(
+						response.error || "フォルダの作成に失敗しました",
+					);
 				}
 				showSuccess("フォルダを作成しました。");
 			}
 
 			// Reload data to reflect changes
 			await loadData();
+
+			// Update current folder reference to reflect the latest data
+			if (currentFolder && isEditing) {
+				const updatedFolder = folders.find(
+					(f) => f.id === currentFolder.id,
+				);
+				if (updatedFolder) {
+					currentFolder = updatedFolder;
+				}
+			} else if (!isEditing && folders.length > 0) {
+				// 新しいフォルダが作成された場合、最初のフォルダを選択
+				currentFolder = folders[0];
+			}
 		} catch (err) {
 			console.error("Error saving folder:", err);
 			showError("フォルダの保存に失敗しました。");
@@ -533,11 +645,51 @@
 		showShareModal = false;
 	}
 
+	async function handleRemoveFromFavorites(data) {
+		const folderId = data.folderId;
+		if (confirm("このフォルダをお気に入りから削除しますか？")) {
+			try {
+				const response = await apiService.removeFromFavorites(
+					parseInt(folderId),
+				);
+				if (response.success) {
+					showSuccess("フォルダをお気に入りから削除しました。");
+					// お気に入りフォルダリストを更新
+					const favoritesResponse = await apiService.getFavorites();
+					if (favoritesResponse.success) {
+						favoritesFolders = favoritesResponse.data || [];
+					}
+					// 現在表示中のフォルダがお気に入りから削除された場合、最初のフォルダに戻る
+					if (
+						currentFolder &&
+						currentFolder.is_favorite &&
+						currentFolder.id == formatFolderId(folderId)
+					) {
+						if (folders.length > 0) {
+							currentFolder = folders[0];
+							await loadWorldsForCurrentFolder();
+						} else {
+							currentFolder = null;
+							setWorldsData([]);
+						}
+					}
+				} else {
+					throw new Error(
+						response.error || "お気に入りから削除に失敗しました",
+					);
+				}
+			} catch (error) {
+				console.error("Error removing from favorites:", error);
+				showError("お気に入りから削除に失敗しました: " + error.message);
+			}
+		}
+	}
+
 	// Initialize on mount
 	onMount(async () => {
 		// 初回認証状態チェック
 		const currentUser = await firebaseAuth.getCurrentUser();
-		
+
 		if (!currentUser) {
 			// 認証されていない場合はログインページにリダイレクト（一度だけ）
 			window.location.href = "/";
@@ -546,7 +698,7 @@
 
 		// ユーザー情報を設定
 		userInfo = firebaseAuth.getUserInfo();
-		userId = currentUser.email || currentUser.uid;
+		userId = currentUser.uid;
 
 		// 認証状態の変更を監視（ログアウト時のみ処理）
 		const unsubscribe = firebaseAuth.onAuthStateChanged(async (user) => {
@@ -581,17 +733,27 @@
 		oneditFolder={handleEditFolder}
 		ondeleteFolder={handleDeleteFolder}
 		onshareFolder={handleShareFolder}
+		onremoveFromFavorites={handleRemoveFromFavorites}
 	/>
 
 	<div class="main-container">
-		<FolderSidebar
-			{folders}
-			{currentFolder}
-			onselectFolder={handleSelectFolder}
-			oncreateFolder={handleCreateFolder}
-			oneditFolder={handleEditFolder}
-			ondeleteFolder={handleDeleteFolder}
-		/>
+		<div class="sidebar-container">
+			<FolderSidebar
+				{folders}
+				{currentFolder}
+				onselectFolder={handleSelectFolder}
+				oncreateFolder={handleCreateFolder}
+				oneditFolder={handleEditFolder}
+				ondeleteFolder={handleDeleteFolder}
+			/>
+
+			<FavoritesSidebar
+				{favoritesFolders}
+				{currentFolder}
+				onselectFavoriteFolder={handleSelectFavoriteFolder}
+				onremoveFromFavorites={handleRemoveFromFavorites}
+			/>
+		</div>
 
 		<div class="main-content">
 			{#if loading}
@@ -624,68 +786,86 @@
 					</div>
 				{/if}
 
-				<WorldInput
-					disabled={!currentFolder}
-					onaddWorld={handleAddWorld}
-				/>
-
-				<Stats
-					totalWorlds={totalCount}
-					disabled={!currentFolder}
-					clearSearch={clearSearchFlag}
-					on:search={handleSearch}
-				/>
-
-				<!-- Sorting Controls -->
-				{#if currentFolder}
-					<div class="sorting-controls">
-						<div class="sort-label">並べ替え:</div>
+				{#if folders.length === 0}
+					<!-- フォルダが無い場合の表示 -->
+					<div class="no-folders-message">
+						<div class="no-folders-icon">📁</div>
+						<h3>フォルダがありません</h3>
+						<p>
+							まずは新しいフォルダを作成してワールドを整理しましょう。
+						</p>
 						<button
-							class="sort-btn"
-							class:active={sortBy === "world_name"}
-							on:click={() => updateSorting("world_name")}
+							class="btn btn-primary create-first-folder-btn"
+							on:click={handleCreateFolder}
 						>
-							ワールド名
-							{#if sortBy === "world_name"}
-								<span class="sort-order"
-									>({sortOrder === "asc"
-										? "降順"
-										: "昇順"})</span
-								>
-							{/if}
-						</button>
-						<button
-							class="sort-btn"
-							class:active={sortBy === "addition_at"}
-							on:click={() => updateSorting("addition_at")}
-						>
-							追加日時
-							{#if sortBy === "addition_at"}
-								<span class="sort-order"
-									>({sortOrder === "asc"
-										? "古い順"
-										: "新しい順"})</span
-								>
-							{/if}
+							最初のフォルダを作成
 						</button>
 					</div>
-				{/if}
+				{:else}
+					{#if currentFolder && !currentFolder.is_favorite}
+						<WorldInput
+							onaddWorld={handleAddWorld}
+						/>
+					{/if}
 
-				{#key `${sortBy}-${sortOrder}-${currentPage}-${worldsData.length}`}
-					<WorldsGrid
-						{worldsData}
-						onopenWorldDetails={handleOpenWorldDetails}
-						onsaveComment={handleSaveComment}
-						onremoveFromFolder={handleRemoveFromFolder}
+					<Stats
+						totalWorlds={totalCount}
+						disabled={!currentFolder}
+						clearSearch={clearSearchFlag}
+						on:search={handleSearch}
 					/>
-				{/key}
 
-				<Pagination
-					{currentPage}
-					{totalPages}
-					{totalCount}
-					onpageChange={handlePageChange}
-				/>
+					<!-- Sorting Controls -->
+					{#if currentFolder}
+						<div class="sorting-controls">
+							<div class="sort-label">並べ替え:</div>
+							<button
+								class="sort-btn"
+								class:active={sortBy === "world_name"}
+								on:click={() => updateSorting("world_name")}
+							>
+								ワールド名
+								{#if sortBy === "world_name"}
+									<span class="sort-order"
+										>({sortOrder === "asc"
+											? "降順"
+											: "昇順"})</span
+									>
+								{/if}
+							</button>
+							<button
+								class="sort-btn"
+								class:active={sortBy === "addition_at"}
+								on:click={() => updateSorting("addition_at")}
+							>
+								追加日時
+								{#if sortBy === "addition_at"}
+									<span class="sort-order"
+										>({sortOrder === "asc"
+											? "古い順"
+											: "新しい順"})</span
+									>
+								{/if}
+							</button>
+						</div>
+					{/if}
+
+					{#key `${sortBy}-${sortOrder}-${currentPage}-${worldsData.length}`}
+						<WorldsGrid
+							{worldsData}
+							onopenWorldDetails={handleOpenWorldDetails}
+							onsaveComment={handleSaveComment}
+							onremoveFromFolder={handleRemoveFromFolder}
+						/>
+					{/key}
+
+					<Pagination
+						{currentPage}
+						{totalPages}
+						{totalCount}
+						onpageChange={handlePageChange}
+					/>
+				{/if}
 			{/if}
 		</div>
 	</div>
@@ -713,7 +893,7 @@
 	<ShareModal
 		isVisible={showShareModal}
 		folderData={currentFolder}
-		userId={userInfo?.uid || userId}
+		userId={userId}
 		onclose={handleCloseShareModal}
 	/>
 </div>
@@ -745,10 +925,23 @@
 		padding: 2rem 1rem;
 	}
 
+	.sidebar-container {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		min-width: 280px;
+		align-self: flex-start;
+		position: sticky;
+		top: 2rem;
+		max-height: calc(100vh - 4rem);
+		overflow-y: auto;
+	}
+
 	.main-content {
 		flex: 1;
 		min-width: 0;
 	}
+
 
 	.loading {
 		text-align: center;
@@ -936,11 +1129,49 @@
 		margin-left: 0.25rem;
 	}
 
+	.no-folders-message {
+		text-align: center;
+		padding: 4rem 2rem;
+		background: white;
+		border-radius: 12px;
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+		margin: 2rem auto;
+		max-width: 600px;
+	}
+
+	.no-folders-icon {
+		font-size: 4rem;
+		margin-bottom: 1rem;
+	}
+
+	.no-folders-message h3 {
+		margin: 0 0 1rem 0;
+		font-size: 1.5rem;
+		color: #333;
+	}
+
+	.no-folders-message p {
+		margin: 0 0 2rem 0;
+		color: #666;
+		font-size: 1.1rem;
+		line-height: 1.6;
+	}
+
+	.create-first-folder-btn {
+		font-size: 1.1rem;
+		padding: 1rem 2rem;
+	}
+
 	@media (max-width: 768px) {
 		.main-container {
 			flex-direction: column;
 			gap: 1rem;
 			padding: 1rem 0.5rem;
 		}
+
+		.sidebar-container {
+			min-width: unset;
+		}
+
 	}
 </style>

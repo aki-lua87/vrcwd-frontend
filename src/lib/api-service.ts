@@ -9,7 +9,7 @@ interface ApiResponse<T = any> {
 
 class ApiService {
   private baseUrl: string;
-  
+
   constructor() {
     this.baseUrl = import.meta.env.PUBLIC_API_BASE_URL || 'https://backend.jmnt34deg.workers.dev';
   }
@@ -32,12 +32,12 @@ class ApiService {
   }
 
   private async makeRequest<T>(
-    endpoint: string, 
+    endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
       const headers = await this.getAuthHeaders();
-      
+
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
         headers: {
@@ -179,13 +179,31 @@ class ApiService {
   }
 
   async getUserProfile(): Promise<ApiResponse> {
-    return this.makeRequest('/api/v2/user/profile');
+    return this.makeRequest('/v2/profile');
   }
 
   async updateUserProfile(profileData: any): Promise<ApiResponse> {
-    return this.makeRequest('/api/v2/user/profile', {
-      method: 'PUT',
+    return this.makeRequest('/v2/profile', {
+      method: 'POST',
       body: JSON.stringify(profileData),
+    });
+  }
+
+  // お気に入り関連のAPI
+  async getFavorites(): Promise<ApiResponse> {
+    return this.makeRequest('/v2/favorites');
+  }
+
+  async addToFavorites(folderId: number): Promise<ApiResponse> {
+    return this.makeRequest('/v2/favorites', {
+      method: 'POST',
+      body: JSON.stringify({ folder_id: folderId }),
+    });
+  }
+
+  async removeFromFavorites(folderId: number): Promise<ApiResponse> {
+    return this.makeRequest(`/v2/favorites/${folderId}`, {
+      method: 'DELETE',
     });
   }
 

@@ -1,5 +1,7 @@
 <script>
 	import { onMount } from "svelte";
+	import { firebaseAuth } from "../lib/firebase-auth";
+	import { apiService } from "../lib/api-service";
 	import WorldCard from "./WorldCard.svelte";
 	import SharedHeader from "./SharedHeader.svelte";
 	import WorldDetailsModal from "./WorldDetailsModal.svelte";
@@ -19,6 +21,8 @@
 	let isAuthenticated = false;
 	let authToken = "";
 	let userFolders = [];
+	let favoritesFolders = [];
+	let isFavorited = false;
 
 	// Modal state
 	let showWorldDetailsModal = false;
@@ -34,76 +38,49 @@
 		PAGE_SIZE: 12,
 	};
 
-	// API Service for public endpoints
-	class PublicApiService {
-		constructor(baseUrl) {
-			this.baseUrl = baseUrl;
-		}
-
-		async fetchFolderInfo(folderId) {
-			const formattedId = String(folderId).padStart(8, "0");
-			const url = `${this.baseUrl}/v2/folders/${formattedId}/info`;
-			const response = await fetch(url);
-			if (!response.ok) {
-				if (response.status === 400) {
-					throw new Error("無効なフォルダID形式です。");
-				} else if (response.status === 404) {
-					throw new Error("フォルダが見つかりません。");
-				}
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-
-		async fetchPublicFolderItems(userId, folderId) {
-			const formattedId = String(folderId).padStart(8, "0");
-			const url = `${this.baseUrl}/v2/u/${userId}/folders/${formattedId}/items`;
-			const response = await fetch(url);
-			if (!response.ok) {
-				if (response.status === 404) {
-					throw new Error(
-						"フォルダが見つからないか、非公開に設定されています。",
-					);
-				} else if (response.status === 403) {
-					throw new Error("このフォルダは非公開です。");
-				}
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-
-		async fetchFolders(token) {
-			const url = `${this.baseUrl}/v2/folders`;
-			const response = await fetch(url, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
-
-		async addWorldToFolder(token, folderId, worldData) {
-			const formattedId = String(folderId).padStart(8, "0");
-			const url = `${this.baseUrl}/v2/folders/${formattedId}/items`;
-			const response = await fetch(url, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify(worldData),
-			});
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return await response.json();
-		}
+	// 公開API用のヘルパー関数
+	function formatFolderId(folderId) {
+		if (!folderId || folderId === null || folderId === undefined) return "";
+		return String(folderId).padStart(8, "0");
 	}
 
-	const apiService = new PublicApiService(CONFIG.API_BASE_URL);
+	async function fetchFolderInfo(folderId) {
+		const formattedId = formatFolderId(folderId);
+		if (!formattedId) {
+			throw new Error("無効なフォルダIDです。");
+		}
+		const url = `${CONFIG.API_BASE_URL}/v2/folders/${formattedId}/info`;
+		const response = await fetch(url);
+		if (!response.ok) {
+			if (response.status === 400) {
+				throw new Error("無効なフォルダID形式です。");
+			} else if (response.status === 404) {
+				throw new Error("フォルダが見つかりません。");
+			}
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		return await response.json();
+	}
+
+	async function fetchPublicFolderItems(userId, folderId) {
+		const formattedId = formatFolderId(folderId);
+		if (!formattedId) {
+			throw new Error("無効なフォルダIDです。");
+		}
+		const url = `${CONFIG.API_BASE_URL}/v2/u/${userId}/folders/${formattedId}/items`;
+		const response = await fetch(url);
+		if (!response.ok) {
+			if (response.status === 404) {
+				throw new Error(
+					"フォルダが見つからないか、非公開に設定されています。",
+				);
+			} else if (response.status === 403) {
+				throw new Error("このフォルダは非公開です。");
+			}
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+		return await response.json();
+	}
 
 	let allWorldsData = [];
 
@@ -116,14 +93,9 @@
 	function setWorldsData(data) {
 		// データの整合性を確保し、必要なプロパティの存在を保証
 		const safeData = data.map((item) => {
-			// addition_atプロパティへの安全なアクセスを確保
-			const additionAt = item.addition_at || item.created_at || null;
-			const createdAt = item.created_at || null;
-
 			return {
 				...item,
-				addition_at: additionAt,
-				created_at: createdAt,
+				addition_at: item.addition_at || null,
 				// プロパティアクセスを強制してオブジェクト構造を確定
 				world_name: item.world_name || "",
 				world_description: item.world_description || "",
@@ -150,8 +122,8 @@
 				return 0;
 			} else if (sortBy === "addition_at") {
 				// より堅牢な日付解析
-				aValue = parseTimestamp(a.addition_at || a.created_at);
-				bValue = parseTimestamp(b.addition_at || b.created_at);
+				aValue = parseTimestamp(a.addition_at);
+				bValue = parseTimestamp(b.addition_at);
 
 				// Numeric comparison for timestamps
 				return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
@@ -209,11 +181,18 @@
 
 		try {
 			// First, get folder information using the new API
-			const folderInfo = await apiService.fetchFolderInfo(folderId);
+			const folderInfo = await fetchFolderInfo(folderId);
 
 			// Check if folder is private
 			if (folderInfo.is_private) {
 				error = "このフォルダは非公開です。";
+				loading = false;
+				return;
+			}
+
+			// Check if path userId matches folder owner
+			if (userId && folderInfo.user_id !== userId) {
+				error = "エラー";
 				loading = false;
 				return;
 			}
@@ -225,13 +204,12 @@
 				comment: folderInfo.comment || "",
 				is_private: folderInfo.is_private,
 				user_id: folderInfo.user_id,
+				user_name: folderInfo.user_name || "",
 				world_count: folderInfo.world_count,
-				created_at: folderInfo.created_at,
-				updated_at: folderInfo.updated_at,
 			};
 
 			// Load worlds data using the user_id from folder info
-			const worlds = await apiService.fetchPublicFolderItems(
+			const worlds = await fetchPublicFolderItems(
 				folderInfo.user_id,
 				folderId,
 			);
@@ -240,7 +218,7 @@
 			loading = false;
 		} catch (err) {
 			console.error("Error loading public folder:", err);
-			error = `Error loading public folder: ${err.message}`;
+			error = `${err.message}`;
 			loading = false;
 		}
 	}
@@ -258,21 +236,16 @@
 	}
 
 	// Check authentication status
-	function checkAuthStatus() {
-		const idToken = localStorage.getItem("idToken");
-		const userEmail = localStorage.getItem("userEmail");
-
-		if (idToken && userEmail) {
-			try {
-				const tokenPayload = JSON.parse(atob(idToken.split(".")[1]));
-				if (tokenPayload.exp * 1000 > Date.now()) {
-					isAuthenticated = true;
-					authToken = idToken;
-					loadUserFolders();
-				}
-			} catch (error) {
-				console.warn("Invalid token:", error);
+	async function checkAuthStatus() {
+		try {
+			const currentUser = await firebaseAuth.getCurrentUser();
+			if (currentUser) {
+				isAuthenticated = true;
+				// ログイン済みユーザーのフォルダ情報があれば取得
+				// loadUserFolders();
 			}
+		} catch (error) {
+			console.warn("Authentication check failed:", error);
 		}
 	}
 
@@ -280,9 +253,73 @@
 		if (!isAuthenticated) return;
 
 		try {
-			userFolders = await apiService.fetchFolders(authToken);
+			const response = await apiService.getFolders();
+			if (response.success) {
+				userFolders = response.data || [];
+			}
 		} catch (error) {
-			console.warn("Failed to load user folders:", error);
+			console.error("Error loading user folders:", error);
+		}
+	}
+
+	async function loadFavorites() {
+		if (!isAuthenticated) return;
+
+		try {
+			const response = await apiService.getFavorites();
+			if (response.success) {
+				favoritesFolders = response.data || [];
+				// 現在のフォルダがお気に入りに含まれているかチェック
+				isFavorited = favoritesFolders.some(
+					(f) =>
+						formatFolderId(f.folder_id) ==
+						formatFolderId(folderId),
+				);
+			}
+		} catch (error) {
+			console.error("Error loading favorites:", error);
+		}
+	}
+
+	async function handleAddToFavorites() {
+		if (!isAuthenticated || !folderData) return;
+
+		try {
+			const response = await apiService.addToFavorites(
+				parseInt(folderId),
+			);
+			if (response.success) {
+				isFavorited = true;
+				alert("フォルダをお気に入りに追加しました！");
+			} else {
+				throw new Error(
+					response.error || "お気に入り追加に失敗しました",
+				);
+			}
+		} catch (error) {
+			console.error("Error adding to favorites:", error);
+			alert("お気に入り追加に失敗しました: " + error.message);
+		}
+	}
+
+	async function handleRemoveFromFavorites() {
+		if (!isAuthenticated || !folderData) return;
+
+		try {
+			const response = await apiService.removeFromFavorites(
+				parseInt(folderId),
+			);
+			if (response.success) {
+				isFavorited = false;
+				alert("フォルダをお気に入りから削除しました。");
+			} else {
+				throw new Error(
+					response.error || "お気に入り削除に失敗しました",
+				);
+			}
+		} catch (error) {
+			console.error("Error removing from favorites:", error);
+			alert("お気に入り削除に失敗しました: " + error.message);
 		}
 	}
 
@@ -313,11 +350,29 @@
 		const { folderId, worldId, comment } = data;
 
 		try {
-			await apiService.addWorldToFolder(authToken, folderId, {
+			// まずマスターにワールドを追加
+			try {
+				await apiService.createWorld({ world_id: worldId });
+			} catch (err) {
+				// 409エラー（既に存在）は無視
+				if (!err.message.includes("409")) {
+					throw err;
+				}
+			}
+
+			// フォルダにワールドを追加
+			const response = await apiService.addWorldToFolder(folderId, {
 				world_id: worldId,
 				comment: comment || null,
 			});
-			alert("フォルダに追加しました！");
+
+			if (response.success) {
+				alert("フォルダに追加しました！");
+			} else {
+				throw new Error(
+					response.error || "フォルダへの追加に失敗しました",
+				);
+			}
 		} catch (error) {
 			console.error("Error adding to folder:", error);
 			alert("フォルダへの追加に失敗しました。");
@@ -328,11 +383,16 @@
 		// Not implemented for public view
 	}
 
-	onMount(() => {
-		checkAuthStatus();
+	onMount(async () => {
+		await checkAuthStatus();
+
+		if (isAuthenticated) {
+			await loadUserFolders();
+			await loadFavorites();
+		}
 
 		if (folderId) {
-			loadData();
+			await loadData();
 		} else {
 			error = "フォルダIDが指定されていません。";
 			loading = false;
@@ -350,13 +410,37 @@
 	{:else if folderData}
 		<div class="folder-info">
 			<div class="folder-header">
-				<h2 class="folder-title">📁 {folderData.folder_name}</h2>
-				{#if folderData.comment}
-					<p class="folder-comment">{folderData.comment}</p>
-				{/if}
-				<div class="folder-meta">
-					<span class="count">🌍 {totalCount} ワールド</span>
+				<div class="folder-info-content">
+					<h2 class="folder-title">📁 {folderData.folder_name}</h2>
+					{#if folderData.user_name && folderData.user_name.trim()}
+						<p class="folder-author">👤 作者: {folderData.user_name}</p>
+					{/if}
+					{#if folderData.comment}
+						<p class="folder-comment">{folderData.comment}</p>
+					{/if}
+					<div class="folder-meta">
+						<span class="count">🌍 {totalCount} ワールド</span>
+					</div>
 				</div>
+				{#if isAuthenticated}
+					<div class="favorite-actions">
+						{#if isFavorited}
+							<button
+								class="favorite-btn favorited"
+								on:click={handleRemoveFromFavorites}
+							>
+								⭐ お気に入り済み
+							</button>
+						{:else}
+							<button
+								class="favorite-btn"
+								on:click={handleAddToFavorites}
+							>
+								☆ お気に入りに追加
+							</button>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		</div>
 
@@ -488,7 +572,47 @@
 		padding: 2rem;
 		border-radius: 12px;
 		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+
+	.folder-info-content {
+		flex: 1;
 		text-align: center;
+	}
+
+	.favorite-actions {
+		flex-shrink: 0;
+	}
+
+	.favorite-btn {
+		background: #667eea;
+		color: white;
+		border: none;
+		padding: 0.75rem 1.5rem;
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 0.9rem;
+		font-weight: 500;
+		transition: all 0.3s ease;
+		box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+	}
+
+	.favorite-btn:hover {
+		background: #5a67d8;
+		transform: translateY(-1px);
+		box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+	}
+
+	.favorite-btn.favorited {
+		background: #f59e0b;
+		color: white;
+	}
+
+	.favorite-btn.favorited:hover {
+		background: #d97706;
 	}
 
 	.folder-title {
@@ -496,6 +620,16 @@
 		font-weight: 600;
 		color: #333;
 		margin: 0 0 1rem 0;
+	}
+
+	.folder-author {
+		font-size: 1rem;
+		color: #667eea;
+		font-weight: 500;
+		margin: 0 0 0.75rem 0;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
 	.folder-comment {
@@ -593,7 +727,7 @@
 		gap: 1rem;
 		padding: 1.5rem;
 		margin: 1rem auto;
-		max-width: 1400px;
+		max-width: 450px;
 		background: white;
 		border-radius: 12px;
 		box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -653,29 +787,34 @@
 		.folder-info {
 			padding: 1rem 0.5rem 0.5rem;
 		}
-		
+
 		.worlds-container {
 			padding: 0.5rem;
 		}
-		
+
 		.sorting-controls {
 			padding: 1rem 0.5rem;
 			margin: 0.5rem;
 		}
-		
+
 		.folder-header {
 			padding: 1.5rem 1rem;
 		}
-		
+
 		.folder-title {
 			font-size: 1.5rem;
 		}
-		
+
+		.folder-author {
+			font-size: 0.9rem;
+			justify-content: center;
+		}
+
 		.worlds-grid {
 			grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 			gap: 1rem;
 		}
-		
+
 		.header-content {
 			flex-direction: column;
 			gap: 1rem;
@@ -690,6 +829,21 @@
 		.pagination {
 			flex-direction: column;
 			gap: 1rem;
+		}
+
+		.folder-header {
+			flex-direction: column;
+			align-items: center;
+			text-align: center;
+			gap: 1rem;
+		}
+
+		.favorite-actions {
+			width: 100%;
+		}
+
+		.favorite-btn {
+			width: 100%;
 		}
 	}
 </style>

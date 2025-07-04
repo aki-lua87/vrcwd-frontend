@@ -26,15 +26,14 @@
 </script>
 
 <div class="sidebar">
-	<h2>📁 フォルダ管理</h2>
+	<h2>📁 フォルダ</h2>
 	<button
 		class="btn btn-primary"
 		id="createFolderBtn"
 		on:click={createFolder}
 	>
-		新しいフォルダ
+		新しいフォルダを作成
 	</button>
-
 	<ul class="folder-list">
 		{#each folders as folder (folder.id)}
 			<li
@@ -63,8 +62,6 @@
 		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 		padding: 1.5rem;
 		height: fit-content;
-		position: sticky;
-		top: 120px;
 	}
 
 	.sidebar h2 {

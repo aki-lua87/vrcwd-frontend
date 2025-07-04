@@ -1,5 +1,6 @@
 ---
-import Footer from '../components/Footer.astro';
+import SettingsPage from "../components/SettingsPage.svelte";
+import Footer from "../components/Footer.astro";
 ---
 
 <html lang="ja">
@@ -11,196 +12,16 @@ import Footer from '../components/Footer.astro';
 		<title>設定 - VRChat Worlds Dashboard</title>
 		<style>
 			body {
-				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-					Roboto, sans-serif;
-				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 				margin: 0;
 				padding: 0;
+				display: flex;
+				flex-direction: column;
 				min-height: 100vh;
-				color: #333;
-				display: flex;
-				flex-direction: column;
-			}
-
-			.main-wrapper {
-				flex: 1;
-				padding: 20px;
-				display: flex;
-				flex-direction: column;
-			}
-
-			.container {
-				max-width: 600px;
-				margin: 0 auto;
-				background: white;
-				padding: 2rem;
-				border-radius: 12px;
-				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-				flex: 1;
-				width: 100%;
-				box-sizing: border-box;
-			}
-
-			.header {
-				display: flex;
-				align-items: center;
-				margin-bottom: 2rem;
-			}
-
-			.back-button {
-				background: none;
-				border: none;
-				font-size: 1.5rem;
-				cursor: pointer;
-				margin-right: 1rem;
-				padding: 0.5rem;
-				border-radius: 6px;
-				transition: background-color 0.3s ease;
-			}
-
-			.back-button:hover {
-				background-color: #f0f0f0;
-			}
-
-			h1 {
-				color: #333;
-				margin: 0;
-				font-size: 1.8rem;
-			}
-
-			.section {
-				margin-bottom: 2rem;
-				padding: 1.5rem;
-				border: 1px solid #e0e0e0;
-				border-radius: 8px;
-				background: #fafafa;
-			}
-
-			.section h2 {
-				color: #555;
-				margin-top: 0;
-				margin-bottom: 1rem;
-				font-size: 1.2rem;
-			}
-
-
-			.user-info {
-				background: #e3f2fd;
-				padding: 1rem;
-				border-radius: 6px;
-				border-left: 4px solid #2196f3;
-			}
-
-			.user-email {
-				font-weight: 600;
-				color: #1976d2;
-			}
-
-			.profile-section {
-				display: flex;
-				align-items: center;
-				gap: 1rem;
-			}
-
-			.profile-image {
-				width: 60px;
-				height: 60px;
-				border-radius: 50%;
-				object-fit: cover;
-			}
-
-			.logout-button {
-				background: #dc3545;
-				color: white;
-				border: none;
-				padding: 0.75rem 2rem;
-				font-size: 1rem;
-				font-weight: 600;
-				border-radius: 6px;
-				cursor: pointer;
-				transition: background-color 0.3s ease;
-				width: 100%;
-			}
-
-			.logout-button:hover {
-				background: #c82333;
 			}
 		</style>
 	</head>
 	<body>
-		<div class="main-wrapper">
-			<div class="container">
-			<div class="header">
-				<button class="back-button" onclick="history.back()">
-					←
-				</button>
-				<h1>設定</h1>
-			</div>
-
-			<div class="section">
-				<h2>アカウント情報</h2>
-				<div class="user-info">
-					<div class="profile-section">
-						<img id="profileImage" class="profile-image" style="display: none;" alt="プロフィール画像" />
-						<div>
-							<div>表示名: <span class="user-email" id="displayName">読み込み中...</span></div>
-							<div>メールアドレス: <span class="user-email" id="userEmail">読み込み中...</span></div>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<div class="section">
-				<h2>アカウント管理</h2>
-				<p>Googleアカウントで認証しています。パスワードの変更はGoogleアカウントの設定から行ってください。</p>
-				<button class="logout-button" id="logoutButton">ログアウト</button>
-				</div>
-			</div>
-		</div>
-
+		<SettingsPage client:load />
 		<Footer />
-
-		<script type="module">
-			import { firebaseAuth } from '../lib/firebase-auth';
-
-			// 認証チェック
-			const currentUser = await firebaseAuth.getCurrentUser();
-			if (!currentUser) {
-				window.location.href = "/";
-				return;
-			}
-
-			// ユーザー情報表示
-			const userInfo = firebaseAuth.getUserInfo();
-			if (userInfo) {
-				document.getElementById("displayName").textContent = 
-					userInfo.displayName || 'なし';
-				document.getElementById("userEmail").textContent = 
-					userInfo.email || 'なし';
-				
-				if (userInfo.photoURL) {
-					const profileImage = document.getElementById("profileImage");
-					profileImage.src = userInfo.photoURL;
-					profileImage.style.display = "block";
-				}
-			}
-
-			// ログアウトボタン
-			document.getElementById("logoutButton").addEventListener("click", async function() {
-				if (confirm("ログアウトしますか？")) {
-					try {
-						const result = await firebaseAuth.signOut();
-						if (result.success) {
-							window.location.href = "/";
-						} else {
-							alert("ログアウトに失敗しました: " + result.error);
-						}
-					} catch (error) {
-						console.error("Logout error:", error);
-						alert("ログアウトに失敗しました");
-					}
-				}
-			});
-		</script>
 	</body>
 </html>

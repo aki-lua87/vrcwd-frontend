@@ -8,27 +8,19 @@
 
 	let shareUrl = "";
 	let copySuccess = false;
-	let cognitoSubUserId = "";
+
+	function formatFolderId(folderId) {
+		if (!folderId || folderId === null || folderId === undefined) return "";
+		return String(folderId).padStart(8, "0");
+	}
 
 	$: if (isVisible && folderData && userId) {
 		const baseUrl = window.location.origin;
-		const formattedFolderId = String(folderData.id).padStart(8, "0");
-		shareUrl = `${baseUrl}/share/${encodeURIComponent(cognitoSubUserId || userId)}/${encodeURIComponent(formattedFolderId)}`;
-	}
-
-	// Extract Cognito sub from stored token
-	$: if (isVisible) {
-		try {
-			const idToken = localStorage.getItem("idToken");
-			if (idToken) {
-				const tokenPayload = JSON.parse(atob(idToken.split(".")[1]));
-				cognitoSubUserId = tokenPayload.sub || userId;
-			} else {
-				cognitoSubUserId = userId; // fallback for legacy mode
-			}
-		} catch (error) {
-			console.error("Failed to extract sub from token:", error);
-			cognitoSubUserId = userId; // fallback
+		const formattedFolderId = formatFolderId(folderData.id);
+		if (formattedFolderId) {
+			shareUrl = `${baseUrl}/share/${encodeURIComponent(userId)}/${encodeURIComponent(formattedFolderId)}`;
+		} else {
+			shareUrl = "";
 		}
 	}
 
@@ -96,7 +88,7 @@
 							{folderData.folder_name}
 						</div>
 						<div class="folder-id">
-							ID: {String(folderData.id).padStart(8, "0")}
+							ID: {formatFolderId(folderData.id)}
 						</div>
 					</div>
 					{#if folderData.comment}

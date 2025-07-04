@@ -6,6 +6,7 @@
 	export let oneditFolder = () => {};
 	export let ondeleteFolder = () => {};
 	export let onshareFolder = () => {};
+	export let onremoveFromFavorites = () => {};
 
 	function editFolder() {
 		if (currentFolder) {
@@ -27,37 +28,57 @@
 			});
 		}
 	}
+
+	function removeFromFavorites() {
+		if (currentFolder) {
+			onremoveFromFavorites({ folderId: currentFolder.id });
+		}
+	}
 </script>
 
 <div class="folder-title-section">
 	<div class="header-content">
 		<div class="folder-info">
-			<h2 class="folder-title">
-				{currentFolder
-					? `📁 ${currentFolder.folder_name}`
-					: "📁 フォルダを選択してください"}
-			</h2>
-			{#if currentFolder && currentFolder.comment && currentFolder.comment.trim()}
-				<p class="folder-comment">{currentFolder.comment}</p>
-			{/if}
+			<div class="folder-header">
+				<h2 class="folder-title">
+					{currentFolder
+						? `📁 ${currentFolder.folder_name}`
+						: "📁 フォルダを選択してください"}
+				</h2>
+				<div class="folder-comment-container">
+					{#if currentFolder && currentFolder.comment && currentFolder.comment.trim()}
+						<p class="folder-comment">{currentFolder.comment}</p>
+					{:else}
+						<p class="folder-comment-placeholder">&nbsp;</p>
+					{/if}
+				</div>
+			</div>
 		</div>
 		{#if currentFolder}
 			<div class="folder-actions">
-				<button class="btn btn-small btn-share" on:click={shareFolder}>
-					🔗 共有
-				</button>
-				<button
-					class="btn btn-small btn-secondary"
-					on:click={editFolder}
-				>
-					✏️ 編集
-				</button>
-				<button
-					class="btn btn-small btn-danger"
-					on:click={deleteFolder}
-				>
-					🗑️ 削除
-				</button>
+				{#if currentFolder.is_favorite}
+					<!-- お気に入りフォルダの場合 -->
+					<button class="btn btn-small btn-warning" on:click={removeFromFavorites}>
+						⭐ お気に入りから削除
+					</button>
+				{:else}
+					<!-- 自分のフォルダの場合 -->
+					<button class="btn btn-small btn-share" on:click={shareFolder}>
+						🔗 共有
+					</button>
+					<button
+						class="btn btn-small btn-secondary"
+						on:click={editFolder}
+					>
+						✏️ 編集
+					</button>
+					<button
+						class="btn btn-small btn-danger"
+						on:click={deleteFolder}
+					>
+						🗑️ 削除
+					</button>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -87,6 +108,13 @@
 		flex: 1;
 	}
 
+	.folder-header {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		min-height: 2.5rem;
+	}
+
 	.folder-title {
 		margin: 0;
 		font-size: 1.8rem;
@@ -95,13 +123,29 @@
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
+		flex-shrink: 0;
 	}
 
-	.folder-comment {
-		margin: 0.5rem 0 0 2.5rem;
+	.folder-comment-container {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		min-width: 0;
+	}
+
+	.folder-comment,
+	.folder-comment-placeholder {
+		margin: 0;
 		font-size: 1rem;
 		color: #666;
 		font-style: italic;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.folder-comment-placeholder {
+		opacity: 0;
 	}
 
 	.folder-actions {
@@ -154,6 +198,15 @@
 		background: #218838;
 	}
 
+	.btn-warning {
+		background: #f59e0b;
+		color: white;
+	}
+
+	.btn-warning:hover {
+		background: #d97706;
+	}
+
 	/* スマートフォン向けスタイル */
 	@media (max-width: 768px) {
 		.folder-title-section {
@@ -172,16 +225,30 @@
 		.folder-info {
 			text-align: center;
 		}
+
+		.folder-header {
+			flex-direction: column;
+			gap: 0.5rem;
+			min-height: auto;
+		}
 		
 		.folder-title {
 			font-size: 1.4rem;
 			justify-content: center;
 		}
+
+		.folder-comment-container {
+			width: 100%;
+			justify-content: center;
+		}
 		
-		.folder-comment {
-			margin: 0.5rem 0 0 0;
+		.folder-comment,
+		.folder-comment-placeholder {
 			text-align: center;
 			font-size: 0.9rem;
+			white-space: normal;
+			overflow: visible;
+			text-overflow: unset;
 		}
 		
 		.folder-actions {

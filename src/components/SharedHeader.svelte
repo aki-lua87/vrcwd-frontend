@@ -1,26 +1,49 @@
 <script>
 	import { onMount } from 'svelte';
 	import { firebaseAuth } from '../lib/firebase-auth';
+	import { apiService } from '../lib/api-service';
 	
 	let isLoggedIn = false;
 	let currentUserId = '';
 	let currentPath = '';
 	let userInfo = null;
 	let unsubscribe = null;
+	let userProfile = null;
+	let displayUserName = '未設定';
 	
+	// ユーザープロフィールを読み込む
+	async function loadUserProfile() {
+		try {
+			const response = await apiService.getUserProfile();
+			if (response.success && response.data) {
+				userProfile = response.data;
+				displayUserName = userProfile.user_name || '未設定';
+			} else {
+				displayUserName = '未設定';
+			}
+		} catch (error) {
+			console.error('Error loading user profile:', error);
+			displayUserName = '未設定';
+		}
+	}
+
 	onMount(() => {
 		currentPath = window.location.pathname;
 		
 		// Firebase認証状態の監視
-		unsubscribe = firebaseAuth.onAuthStateChanged((user) => {
+		unsubscribe = firebaseAuth.onAuthStateChanged(async (user) => {
 			if (user) {
 				isLoggedIn = true;
 				userInfo = firebaseAuth.getUserInfo();
 				currentUserId = userInfo?.displayName || userInfo?.email || 'ユーザー';
+				// ユーザープロフィールを読み込み
+				await loadUserProfile();
 			} else {
 				isLoggedIn = false;
 				currentUserId = '';
 				userInfo = null;
+				userProfile = null;
+				displayUserName = '未設定';
 			}
 		});
 
@@ -70,7 +93,7 @@
 		<h1>VRChat Worlds Dashboard</h1>
 		<div class="nav-info">
 			{#if isLoggedIn}
-				<span class="user-display">ユーザー: {currentUserId}</span>
+				<span class="user-display">ユーザー: {displayUserName}</span>
 				{#if !isDashboardPage}
 					<button class="nav-btn" on:click={goToDashboard}>ダッシュボード</button>
 				{/if}

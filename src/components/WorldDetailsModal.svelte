@@ -13,6 +13,11 @@
 	let folderComment = "";
 	let worldInFolders = new Set();
 
+	function formatFolderId(folderId) {
+		if (!folderId || folderId === null || folderId === undefined) return "";
+		return String(folderId).padStart(8, "0");
+	}
+
 	$: if (isVisible && worldData) {
 		loadWorldFolderStatus();
 	}
@@ -24,7 +29,10 @@
 
 		const apiService = {
 			async fetchFolderItems(token, folderId) {
-				const formattedId = String(folderId).padStart(8, "0");
+				const formattedId = formatFolderId(folderId);
+				if (!formattedId) {
+					throw new Error("無効なフォルダIDです。");
+				}
 				const url = `${import.meta.env.PUBLIC_API_BASE_URL || "http://localhost:8787"}/v2/folders/${formattedId}/items`;
 				const response = await fetch(url, {
 					headers: {
