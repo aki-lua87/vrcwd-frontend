@@ -218,6 +218,63 @@ class ApiService {
   getUserInfo() {
     return firebaseAuth.getUserInfo();
   }
+
+  // 公開フォルダ用のAPI（認証なし）
+  async getPublicFolderInfo(folderId: string): Promise<ApiResponse> {
+    const formattedId = String(folderId).padStart(8, "0");
+    try {
+      const response = await fetch(`${this.baseUrl}/v2/folders/${formattedId}/info`);
+      
+      if (!response.ok) {
+        if (response.status === 400) {
+          throw new Error('無効なフォルダID形式です。');
+        } else if (response.status === 404) {
+          throw new Error('フォルダが見つかりません。');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data
+      };
+    } catch (error: any) {
+      console.error('Public folder info request error:', error);
+      return {
+        success: false,
+        error: error.message || 'フォルダ情報の取得に失敗しました'
+      };
+    }
+  }
+
+  async getPublicFolderItems(userId: string, folderId: string): Promise<ApiResponse> {
+    const formattedId = String(folderId).padStart(8, "0");
+    try {
+      const response = await fetch(`${this.baseUrl}/v2/users/${userId}/folders/${formattedId}/items`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('フォルダが見つからないか、非公開に設定されています。');
+        } else if (response.status === 403) {
+          throw new Error('このフォルダは非公開です。');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data
+      };
+    } catch (error: any) {
+      console.error('Public folder items request error:', error);
+      return {
+        success: false,
+        error: error.message || 'フォルダアイテムの取得に失敗しました'
+      };
+    }
+  }
 }
 
 export const apiService = new ApiService();

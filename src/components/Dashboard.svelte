@@ -236,41 +236,19 @@
 
 	// 公開フォルダ情報取得のヘルパー関数
 	async function fetchPublicFolderInfo(folderId) {
-		const formattedId = formatFolderId(folderId);
-		if (!formattedId) {
-			throw new Error("無効なフォルダIDです。");
+		const response = await apiService.getPublicFolderInfo(folderId);
+		if (!response.success) {
+			throw new Error(response.error || "フォルダ情報の取得に失敗しました。");
 		}
-		const url = `${import.meta.env.PUBLIC_API_BASE_URL || "https://backend.jmnt34deg.workers.dev"}/v2/folders/${formattedId}/info`;
-		const response = await fetch(url);
-		if (!response.ok) {
-			if (response.status === 400) {
-				throw new Error("無効なフォルダID形式です。");
-			} else if (response.status === 404) {
-				throw new Error("フォルダが見つかりません。");
-			}
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-		return await response.json();
+		return response.data;
 	}
 
 	async function fetchPublicFolderItems(userId, folderId) {
-		const formattedId = formatFolderId(folderId);
-		if (!formattedId) {
-			throw new Error("無効なフォルダIDです。");
+		const response = await apiService.getPublicFolderItems(userId, folderId);
+		if (!response.success) {
+			throw new Error(response.error || "フォルダアイテムの取得に失敗しました。");
 		}
-		const url = `${import.meta.env.PUBLIC_API_BASE_URL || "https://backend.jmnt34deg.workers.dev"}/v2/u/${userId}/folders/${formattedId}/items`;
-		const response = await fetch(url);
-		if (!response.ok) {
-			if (response.status === 404) {
-				throw new Error(
-					"フォルダが見つからないか、非公開に設定されています。",
-				);
-			} else if (response.status === 403) {
-				throw new Error("このフォルダは非公開です。");
-			}
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
-		return await response.json();
+		return response.data;
 	}
 
 	// Event handlers
