@@ -114,19 +114,30 @@
 		!selectedTags.includes(tag.name)
 	).slice(0, 10);
 
+	// 検索条件変更時の自動検索用のタイムアウトID
+	let searchTimeoutId;
+
 	// 検索条件変更時の自動検索
 	$: if (searchQuery || selectedTags.length > 0 || authorQuery) {
-		const timeoutId = setTimeout(() => {
+		if (searchTimeoutId) {
+			clearTimeout(searchTimeoutId);
+		}
+		searchTimeoutId = setTimeout(() => {
 			performSearch(1);
 		}, 500);
-		
-		return () => clearTimeout(timeoutId);
 	}
 
 	// コンポーネント初期化
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	
 	onMount(() => {
 		loadTags();
+	});
+
+	onDestroy(() => {
+		if (searchTimeoutId) {
+			clearTimeout(searchTimeoutId);
+		}
 	});
 
 	// 検索クリア
