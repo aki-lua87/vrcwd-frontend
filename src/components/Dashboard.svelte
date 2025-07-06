@@ -1143,6 +1143,11 @@
 
 		.sidebar-container {
 			min-width: unset;
+			width: 100%;
+			position: static;
+			max-height: none;
+			overflow-y: visible;
+			gap: 1rem;
 		}
 	}
 </style>

@@ -157,6 +157,8 @@
 	@media (max-width: 768px) {
 		.favorites-section {
 			padding: 1rem;
+			width: 100%;
+			margin: 0;
 		}
 
 		.favorites-title {

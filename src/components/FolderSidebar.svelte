@@ -145,6 +145,7 @@
 		.sidebar {
 			width: 100%;
 			position: static;
+			margin: 0;
 		}
 	}
 </style>
