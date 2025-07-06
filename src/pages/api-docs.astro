@@ -1,0 +1,227 @@
+---
+import Footer from "../components/Footer.astro";
+---
+
+<html lang="ja">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>API仕様 - VRC Worlds Dashboard</title>
+		<style>
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+					Roboto, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				margin: 0;
+				padding: 0;
+				min-height: 100vh;
+				color: #333;
+				display: flex;
+				flex-direction: column;
+			}
+
+			.main-wrapper {
+				flex: 1;
+				padding: 20px;
+				display: flex;
+				flex-direction: column;
+			}
+
+			.container {
+				max-width: 800px;
+				margin: 0 auto;
+				background: white;
+				padding: 2rem;
+				border-radius: 12px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+				flex: 1;
+				width: 100%;
+				box-sizing: border-box;
+			}
+
+			h1 {
+				text-align: center;
+				color: #333;
+				margin-bottom: 2rem;
+				font-size: 2rem;
+			}
+
+			h2 {
+				color: #555;
+				border-bottom: 2px solid #667eea;
+				padding-bottom: 0.5rem;
+				margin-top: 2rem;
+			}
+
+			h3 {
+				color: #666;
+				margin-top: 1.5rem;
+			}
+
+			h4 {
+				color: #667eea;
+				margin-top: 1rem;
+				margin-bottom: 0.5rem;
+			}
+
+			p,
+			li {
+				line-height: 1.6;
+				color: #666;
+			}
+
+			.highlight {
+				background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%);
+				padding: 1rem;
+				border-radius: 8px;
+				border-left: 4px solid #667eea;
+				margin: 1rem 0;
+			}
+
+			.feature-card {
+				background: #f8f9fa;
+				padding: 1rem;
+				border-radius: 8px;
+				border: 1px solid #e9ecef;
+				margin: 1rem 0;
+			}
+
+			.feature-card h3 {
+				color: #667eea;
+				margin-top: 0;
+				margin-bottom: 0.5rem;
+			}
+
+			.back-button {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				border: none;
+				padding: 0.75rem 2rem;
+				font-size: 1rem;
+				font-weight: 600;
+				border-radius: 6px;
+				cursor: pointer;
+				transition:
+					transform 0.2s ease,
+					box-shadow 0.2s ease;
+				text-decoration: none;
+				display: inline-block;
+				margin-top: 2rem;
+			}
+
+			.back-button:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+			}
+
+			pre {
+				background: #f8f9fa;
+				border: 1px solid #e9ecef;
+				border-radius: 4px;
+				padding: 1rem;
+				font-size: 0.875rem;
+				overflow-x: auto;
+				color: #333;
+			}
+
+			.api-endpoint {
+				background: #e8f5e8;
+				padding: 0.75rem;
+				border-radius: 6px;
+				border-left: 4px solid #28a745;
+				margin: 1rem 0;
+				font-family: monospace;
+				font-size: 0.9rem;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="main-wrapper">
+			<div class="container">
+				<h1>API仕様</h1>
+
+				<h2>認証</h2>
+				<p>
+					ユーザIDの確認、APIキーの取得は<a
+						href="/settings"
+						style="color: #667eea;">設定ページ</a
+					>から行えます。
+				</p>
+
+				<h2>エンドポイント</h2>
+
+				<div class="feature-card">
+					<h3>フォルダアイテム取得 (公開フォルダのみ)</h3>
+					<div class="api-endpoint">
+						GET
+						https://backend.jmnt34deg.workers.dev/v2/users/[user_id]/folders/[folder_id]/items
+					</div>
+					<p>指定したフォルダ内のワールドアイテムを取得します。</p>
+
+					<h4>パラメータ</h4>
+					<ul>
+						<li><code>user_id</code>: ユーザーID</li>
+						<li>
+							<code>folder_id</code>: フォルダID
+						</li>
+					</ul>
+
+					<h4>レスポンス例</h4>
+					<pre>[ 
+	&lbrace; 
+		"id": 935, 
+		"world_id":"wrld_111111-2222-3333-4444-55556666677777",
+		"world_name": "world_name", 
+		"world_description":"world_description", 
+		"world_author_name":"world_author_name", 
+		"world_thumbnail_image_url":"world_thumbnail_image_url", 
+		"comment": "comment",
+		"addition_at": "2025-07-01T12:52:12.000Z", 
+		"created_at":"2025-07-01T12:52:12.000Z", 
+		"updated_at":"2025-07-01T16:57:48.000Z" 
+	&rbrace; 
+]</pre>
+				</div>
+
+				<div class="feature-card">
+					<h3>フォルダアイテム追加</h3>
+					<div class="api-endpoint">
+						POST
+						https://backend.jmnt34deg.workers.dev/v2/users/[user_id]/folders/[folder_id]/items?api_key=[APIキー]
+					</div>
+					<p>指定したフォルダにワールドアイテムを追加します。</p>
+
+					<h4>パラメータ</h4>
+					<ul>
+						<li><code>user_id</code>: ユーザーID</li>
+						<li>
+							<code>folder_id</code>: フォルダID
+						</li>
+						<li>
+							<code>api_key</code>: APIキー（クエリパラメータ）
+						</li>
+					</ul>
+
+					<h4>リクエストボディ</h4>
+					<pre>&lbrace; 
+	"world_id":"wrld_111111-2222-3333-4444-55556666677777", 
+	"comment":"コメント" 
+&rbrace;</pre>
+				</div>
+
+				<h2>注意事項</h2>
+				<div class="highlight">
+					<ul>
+						<li>
+							フォルダIDはフォルダの共有ページから確認できます
+						</li>
+						<li>APIキーは設定ページから取得してください</li>
+						<li>レート制限が適用される場合があります</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+		<Footer />
+	</body>
+</html>

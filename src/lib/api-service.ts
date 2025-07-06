@@ -275,6 +275,23 @@ class ApiService {
       };
     }
   }
+
+  // APIキー関連のAPI
+  async getApiKey(): Promise<ApiResponse> {
+    return this.makeRequest('/v2/auth/api-keys');
+  }
+
+  async createApiKey(): Promise<ApiResponse> {
+    return this.makeRequest('/v2/auth/api-keys', {
+      method: 'POST',
+    });
+  }
+
+  async deleteApiKey(): Promise<ApiResponse> {
+    return this.makeRequest('/v2/auth/api-keys', {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiService = new ApiService();

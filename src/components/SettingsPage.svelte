@@ -5,6 +5,11 @@
 
 	let newUserName = "";
 	let isLoading = false;
+	let apiKey = "";
+	let hasApiKey = false;
+	let apiKeyCreatedAt = "";
+	let isApiKeyLoading = false;
+	let userId = "";
 
 	// 現在のユーザー名をフィールドに設定
 	async function loadUserProfile() {
@@ -15,6 +20,25 @@
 			}
 		} catch (error) {
 			console.error("Error loading user profile:", error);
+		}
+	}
+
+	// APIキー情報を取得
+	async function loadApiKey() {
+		try {
+			const response = await apiService.getApiKey();
+			if (response.success && response.data) {
+				hasApiKey = true;
+				apiKey = response.data.api_key || "";
+				apiKeyCreatedAt = response.data.created_at || "";
+			} else {
+				hasApiKey = false;
+				apiKey = "";
+				apiKeyCreatedAt = "";
+			}
+		} catch (error) {
+			console.error("Error loading API key:", error);
+			hasApiKey = false;
 		}
 	}
 
@@ -47,6 +71,62 @@
 		}
 	}
 
+	// APIキー作成
+	async function handleCreateApiKey() {
+		if (!confirm("新しいAPIキーを作成しますか？")) {
+			return;
+		}
+
+		isApiKeyLoading = true;
+
+		try {
+			const response = await apiService.createApiKey();
+			if (response.success) {
+				alert("APIキーを作成しました。");
+				await loadApiKey();
+			} else {
+				throw new Error(
+					response.error || "APIキーの作成に失敗しました",
+				);
+			}
+		} catch (error) {
+			console.error("Error creating API key:", error);
+			alert("APIキーの作成に失敗しました: " + error.message);
+		} finally {
+			isApiKeyLoading = false;
+		}
+	}
+
+	// APIキー削除
+	async function handleDeleteApiKey() {
+		if (
+			!confirm(
+				"APIキーを削除しますか？\n削除すると、このAPIキーを使用している全てのアプリケーションが動作しなくなります。",
+			)
+		) {
+			return;
+		}
+
+		isApiKeyLoading = true;
+
+		try {
+			const response = await apiService.deleteApiKey();
+			if (response.success) {
+				alert("APIキーを削除しました。");
+				await loadApiKey();
+			} else {
+				throw new Error(
+					response.error || "APIキーの削除に失敗しました",
+				);
+			}
+		} catch (error) {
+			console.error("Error deleting API key:", error);
+			alert("APIキーの削除に失敗しました: " + error.message);
+		} finally {
+			isApiKeyLoading = false;
+		}
+	}
+
 	// ログアウト
 	async function handleLogout() {
 		if (confirm("ログアウトしますか？")) {
@@ -72,8 +152,12 @@
 			return;
 		}
 
+		// ユーザーIDを設定
+		userId = currentUser.uid;
+
 		// 初期化
 		await loadUserProfile();
+		await loadApiKey();
 	});
 </script>
 
@@ -87,9 +171,8 @@
 		</div>
 
 		<div class="section">
-			<h2>ユーザー名設定</h2>
+			<h2>表示名設定</h2>
 			<div class="form-group">
-				<label for="newUserName">ユーザー名</label>
 				<input
 					type="text"
 					id="newUserName"
@@ -104,6 +187,79 @@
 			>
 				{isLoading ? "変更中..." : "ユーザー名を変更"}
 			</button>
+		</div>
+
+		<div class="section">
+			<h2>開発者向け</h2>
+			<div class="api-docs-link">
+				<a href="/api-docs">API仕様</a>
+			</div>
+
+			{#if hasApiKey}
+				<div class="api-key-info">
+					<div class="form-group">
+						<label for="apiKey">APIキー</label>
+						<div class="api-key-display">
+							<input
+								type="text"
+								id="apiKey"
+								bind:value={apiKey}
+								readonly
+								class="api-key-input"
+							/>
+							<button
+								class="copy-button"
+								on:click={() =>
+									navigator.clipboard.writeText(apiKey)}
+								title="コピー"
+							>
+								📋
+							</button>
+						</div>
+					</div>
+					<button
+						class="delete-button"
+						disabled={isApiKeyLoading}
+						on:click={handleDeleteApiKey}
+					>
+						{isApiKeyLoading ? "削除中..." : "APIキーを削除"}
+					</button>
+				</div>
+			{:else}
+				<div class="no-api-key">
+					<p>APIキーが作成されていません。</p>
+					<button
+						class="create-button"
+						disabled={isApiKeyLoading}
+						on:click={handleCreateApiKey}
+					>
+						{isApiKeyLoading ? "作成中..." : "APIキーを作成"}
+					</button>
+				</div>
+			{/if}
+			<br /><br />
+			{#if userId}
+				<div class="form-group">
+					<label for="userId">ユーザーID</label>
+					<div class="user-id-display">
+						<input
+							type="text"
+							id="userId"
+							bind:value={userId}
+							readonly
+							class="user-id-input"
+						/>
+						<button
+							class="copy-button"
+							on:click={() =>
+								navigator.clipboard.writeText(userId)}
+							title="コピー"
+						>
+							📋
+						</button>
+					</div>
+				</div>
+			{/if}
 		</div>
 
 		<div class="section">
@@ -245,5 +401,113 @@
 	.save-button:disabled {
 		background: #6c757d;
 		cursor: not-allowed;
+	}
+
+	.api-key-display {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+	}
+
+	.api-key-input {
+		flex: 1;
+		font-family: monospace;
+		font-size: 0.9rem;
+		background: #f8f9fa;
+	}
+
+	.copy-button {
+		background: #6c757d;
+		color: white;
+		border: none;
+		padding: 0.5rem;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: background-color 0.3s ease;
+		font-size: 1rem;
+	}
+
+	.copy-button:hover {
+		background: #5a6268;
+	}
+
+	.api-key-date {
+		color: #666;
+		font-size: 0.9rem;
+		margin: 0.5rem 0;
+	}
+
+	.delete-button {
+		background: #dc3545;
+		color: white;
+		border: none;
+		padding: 0.75rem 2rem;
+		font-size: 1rem;
+		font-weight: 600;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: background-color 0.3s ease;
+	}
+
+	.delete-button:hover {
+		background: #c82333;
+	}
+
+	.delete-button:disabled {
+		background: #6c757d;
+		cursor: not-allowed;
+	}
+
+	.create-button {
+		background: #007bff;
+		color: white;
+		border: none;
+		padding: 0.75rem 2rem;
+		font-size: 1rem;
+		font-weight: 600;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: background-color 0.3s ease;
+	}
+
+	.create-button:hover {
+		background: #0056b3;
+	}
+
+	.create-button:disabled {
+		background: #6c757d;
+		cursor: not-allowed;
+	}
+
+	.api-docs-link {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid #e0e0e0;
+	}
+
+	.api-docs-link a {
+		color: #007bff;
+		text-decoration: none;
+		font-weight: 600;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.api-docs-link a:hover {
+		text-decoration: underline;
+	}
+
+	.user-id-display {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+	}
+
+	.user-id-input {
+		flex: 1;
+		font-family: monospace;
+		font-size: 0.9rem;
+		background: #f8f9fa;
 	}
 </style>
