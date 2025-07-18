@@ -7,7 +7,9 @@
 	export let onclose = () => {};
 
 	let shareUrl = "";
+	let apiUrl = "";
 	let copySuccess = false;
+	let copyApiSuccess = false;
 
 	function formatFolderId(folderId) {
 		if (!folderId || folderId === null || folderId === undefined) return "";
@@ -19,14 +21,17 @@
 		const formattedFolderId = formatFolderId(folderData.id);
 		if (formattedFolderId) {
 			shareUrl = `${baseUrl}/share/${encodeURIComponent(userId)}/${encodeURIComponent(formattedFolderId)}`;
+			apiUrl = `${baseUrl}/api/users/${encodeURIComponent(userId)}/folders/${encodeURIComponent(formattedFolderId)}/items`;
 		} else {
 			shareUrl = "";
+			apiUrl = "";
 		}
 	}
 
 	function closeModal() {
 		isVisible = false;
 		copySuccess = false;
+		copyApiSuccess = false;
 		onclose();
 	}
 
@@ -48,6 +53,28 @@
 			copySuccess = true;
 			setTimeout(() => {
 				copySuccess = false;
+			}, 2000);
+		}
+	}
+
+	async function copyApiToClipboard() {
+		try {
+			await navigator.clipboard.writeText(apiUrl);
+			copyApiSuccess = true;
+			setTimeout(() => {
+				copyApiSuccess = false;
+			}, 2000);
+		} catch (err) {
+			// Fallback for older browsers
+			const textArea = document.createElement("textarea");
+			textArea.value = apiUrl;
+			document.body.appendChild(textArea);
+			textArea.select();
+			document.execCommand("copy");
+			document.body.removeChild(textArea);
+			copyApiSuccess = true;
+			setTimeout(() => {
+				copyApiSuccess = false;
 			}, 2000);
 		}
 	}
@@ -107,28 +134,47 @@
 						{/if}
 					</p>
 
-					<div class="url-container">
-						<input
-							type="text"
-							class="share-url-input"
-							value={shareUrl}
-							readonly
-						/>
-						<button
-							class="copy-btn"
-							class:success={copySuccess}
-							on:click={copyToClipboard}
-						>
-							{copySuccess ? "✓ コピー済み" : "📋 コピー"}
-						</button>
+					<div class="url-section">
+						<label class="url-label">共有ページURL</label>
+						<div class="url-container">
+							<input
+								type="text"
+								class="share-url-input"
+								value={shareUrl}
+								readonly
+							/>
+							<button
+								class="copy-btn"
+								class:success={copySuccess}
+								on:click={copyToClipboard}
+							>
+								{copySuccess ? "✓ コピー済み" : "コピー"}
+							</button>
+						</div>
+					</div>
+
+					<div class="url-section">
+						<label class="url-label">JSON API エンドポイント</label>
+						<div class="url-container">
+							<input
+								type="text"
+								class="share-url-input"
+								value={apiUrl}
+								readonly
+							/>
+							<button
+								class="copy-btn"
+								class:success={copyApiSuccess}
+								on:click={copyApiToClipboard}
+							>
+								{copyApiSuccess ? "✓ コピー済み" : "コピー"}
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
 
 			<div class="modal-footer">
-				<button class="btn btn-secondary" on:click={openInNewTab}>
-					🌐 新しいタブで開く
-				</button>
 				<button class="btn btn-primary" on:click={closeModal}>
 					閉じる
 				</button>
@@ -240,6 +286,18 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
+	}
+
+	.url-section {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.url-label {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: #333;
 	}
 
 	.share-description {

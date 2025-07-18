@@ -190,6 +190,45 @@
 		</div>
 
 		<div class="section">
+			<h2>PortalLibrarySystem用互換URL</h2>
+			<p>
+				<a
+					href="https://genkaikogyo.booth.pm/items/6659099"
+					target="_blank"
+					rel="noopener noreferrer">PortalLibrarySystem</a
+				>のJSONモードにて利用できるAPIエンドポイントのURL。公開状態のフォルダの内容が表示されます。
+			</p>
+			<p class="notice">
+				※ PortalLibrarySystem は 幻会興業 様より公開されている
+				VRCのワールドに設置するポータルシステムです。本システムと直接の関係はございません。
+			</p>
+			{#if userId}
+				<div class="form-group">
+					<label for="wpplsUrl">URL</label>
+					<div class="wppls-url-display">
+						<input
+							type="text"
+							id="wpplsUrl"
+							value={`${window.location.origin}/api/users/${userId}/wppls?sorttype=addition_asc`}
+							readonly
+							class="wppls-url-input"
+						/>
+						<button
+							class="copy-button"
+							on:click={() =>
+								navigator.clipboard.writeText(
+									`${window.location.origin}/api/users/${userId}/wppls?sorttype=addition_asc`,
+								)}
+							title="コピー"
+						>
+							コピー
+						</button>
+					</div>
+				</div>
+			{/if}
+		</div>
+
+		<div class="section">
 			<h2>開発者向け</h2>
 			<div class="api-docs-link">
 				<a href="/api-docs">API仕様</a>
@@ -213,7 +252,7 @@
 									navigator.clipboard.writeText(apiKey)}
 								title="コピー"
 							>
-								📋
+								コピー
 							</button>
 						</div>
 					</div>
@@ -255,7 +294,7 @@
 								navigator.clipboard.writeText(userId)}
 							title="コピー"
 						>
-							📋
+							コピー
 						</button>
 					</div>
 				</div>
@@ -417,7 +456,7 @@
 	}
 
 	.copy-button {
-		background: #6c757d;
+		background: #28a745;
 		color: white;
 		border: none;
 		padding: 0.5rem;
@@ -428,7 +467,7 @@
 	}
 
 	.copy-button:hover {
-		background: #5a6268;
+		background: #218838;
 	}
 
 	.api-key-date {
@@ -509,5 +548,28 @@
 		font-family: monospace;
 		font-size: 0.9rem;
 		background: #f8f9fa;
+	}
+
+	.wppls-url-display {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+	}
+
+	.wppls-url-input {
+		flex: 1;
+		font-family: monospace;
+		font-size: 0.9rem;
+		background: #f8f9fa;
+	}
+
+	.notice {
+		color: #666;
+		font-size: 0.85rem;
+		margin-top: 0.5rem;
+		padding: 0.5rem;
+		background: #f8f9fa;
+		border-radius: 4px;
+		border-left: 3px solid #007bff;
 	}
 </style>
