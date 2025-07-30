@@ -12,6 +12,7 @@
 	let selectedFolderId = "";
 	let folderComment = "";
 	let worldInFolders = new Set();
+	let addToFolderSuccess = false;
 
 	function formatFolderId(folderId) {
 		if (!folderId || folderId === null || folderId === undefined) return "";
@@ -28,7 +29,12 @@
 		// フォルダ一覧は親コンポーネントから渡されるので、API呼び出しは不要
 		// 代わりに、フォルダ一覧から現在のワールドが含まれているかを確認
 		for (const folder of folders) {
-			if (folder.worlds && folder.worlds.some(world => world.world_id === worldData.world_id)) {
+			if (
+				folder.worlds &&
+				folder.worlds.some(
+					(world) => world.world_id === worldData.world_id,
+				)
+			) {
 				worldInFolders.add(folder.id);
 			}
 		}
@@ -38,6 +44,7 @@
 
 	function closeModal() {
 		isVisible = false;
+		addToFolderSuccess = false;
 		onclose();
 	}
 
@@ -68,6 +75,12 @@
 		// Update local state
 		worldInFolders.add(parseInt(selectedFolderId));
 		worldInFolders = new Set(worldInFolders);
+
+		// Show success state
+		addToFolderSuccess = true;
+		setTimeout(() => {
+			addToFolderSuccess = false;
+		}, 2000);
 
 		// Clear form
 		selectedFolderId = "";
@@ -160,8 +173,14 @@
 							class="comment-input"
 							placeholder="コメント (任意)"
 						/>
-						<button class="btn btn-primary" on:click={addToFolder}>
-							📂 フォルダに追加
+						<button
+							class="btn btn-primary"
+							class:success={addToFolderSuccess}
+							on:click={addToFolder}
+						>
+							{addToFolderSuccess
+								? "✓ 追加しました"
+								: "📂 フォルダに追加"}
 						</button>
 					</div>
 				</div>
@@ -294,6 +313,14 @@
 
 	.btn-primary:hover {
 		background: #764ba2;
+	}
+
+	.btn-primary.success {
+		background: #28a745;
+	}
+
+	.btn-primary.success:hover {
+		background: #218838;
 	}
 
 	.section-title {
