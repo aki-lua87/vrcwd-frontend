@@ -6,7 +6,6 @@
     "dev": "cp astro.config.dev.mjs astro.config.mjs && astro dev",
     "build": "cp astro.config.prod.mjs astro.config.mjs && astro build",
     "build:dev": "cp astro.config.dev.mjs astro.config.mjs && astro build",
-    "preview": "astro preview",
     "astro": "astro",
     "deploy": "pnpm run build && wrangler pages deploy dist --project-name=wwms"
   },

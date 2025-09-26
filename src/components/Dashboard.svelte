@@ -238,15 +238,22 @@
 	async function fetchPublicFolderInfo(folderId) {
 		const response = await apiService.getPublicFolderInfo(folderId);
 		if (!response.success) {
-			throw new Error(response.error || "フォルダ情報の取得に失敗しました。");
+			throw new Error(
+				response.error || "フォルダ情報の取得に失敗しました。",
+			);
 		}
 		return response.data;
 	}
 
 	async function fetchPublicFolderItems(userId, folderId) {
-		const response = await apiService.getPublicFolderItems(userId, folderId);
+		const response = await apiService.getPublicFolderItems(
+			userId,
+			folderId,
+		);
 		if (!response.success) {
-			throw new Error(response.error || "フォルダアイテムの取得に失敗しました。");
+			throw new Error(
+				response.error || "フォルダアイテムの取得に失敗しました。",
+			);
 		}
 		return response.data;
 	}
@@ -383,7 +390,7 @@
 						response.error || "フォルダの削除に失敗しました",
 					);
 				}
-				showSuccess("フォルダを削除しました。");
+				// showSuccess("フォルダを削除しました。");
 				await loadData();
 			} catch (err) {
 				console.error("Error deleting folder:", err);
@@ -426,7 +433,7 @@
 				);
 			}
 
-			showSuccess("ワールドを追加しました。");
+			// showSuccess("ワールドを追加しました。");
 			await loadWorldsForCurrentFolder();
 		} catch (err) {
 			console.error("Error adding world:", err);
@@ -463,7 +470,7 @@
 				setWorldsData(allWorldsData);
 			}
 
-			showSuccess("コメントを更新しました。");
+			// showSuccess("コメントを更新しました。");
 		} catch (err) {
 			console.error("Error saving comment:", err);
 			showError("コメントの保存に失敗しました。");
@@ -486,7 +493,7 @@
 					);
 				}
 
-				showSuccess("ワールドを削除しました。");
+				// showSuccess("ワールドを削除しました。");
 				await loadWorldsForCurrentFolder();
 			} catch (err) {
 				console.error("Error removing world:", err);
@@ -531,7 +538,7 @@
 				comment: comment,
 			});
 
-			showSuccess("ワールドをフォルダに追加しました。");
+			// showSuccess("ワールドをフォルダに追加しました。");
 
 			// Update main dashboard if the folder is currently selected
 			if (currentFolder && currentFolder.id == folderId) {
@@ -548,7 +555,7 @@
 
 		try {
 			await apiService.removeWorldFromFolder(folderId, worldId);
-			showSuccess("フォルダからワールドを削除しました。");
+			// showSuccess("フォルダからワールドを削除しました。");
 
 			// Update main dashboard if the folder is currently selected
 			if (currentFolder && currentFolder.id == folderId) {
@@ -557,6 +564,29 @@
 		} catch (err) {
 			console.error("Error removing from folder:", err);
 			showError("フォルダからの削除に失敗しました。");
+		}
+	}
+
+	async function handleUpdateWorld(worldId) {
+		try {
+			// ワールドリストを再取得してモーダルの表示データを更新
+			await loadWorldsForCurrentFolder();
+
+			// モーダルで表示中のワールドデータも更新
+			if (selectedWorldData && selectedWorldData.world_id === worldId) {
+				const updatedWorldData = allWorldsData.find(
+					(w) => w.world_id === worldId,
+				);
+				if (updatedWorldData) {
+					selectedWorldData = updatedWorldData;
+				}
+			}
+			// showSuccess("ワールド情報を更新しました。");
+		} catch (err) {
+			console.error("Error refreshing world data:", err);
+			showError(
+				"ワールド情報の更新後にデータの再読み込みに失敗しました。",
+			);
 		}
 	}
 
@@ -577,7 +607,7 @@
 						response.error || "フォルダの更新に失敗しました",
 					);
 				}
-				showSuccess("フォルダを更新しました。");
+				// showSuccess("フォルダを更新しました。");
 			} else {
 				response = await apiService.createFolder(folderData);
 				if (!response.success) {
@@ -585,7 +615,7 @@
 						response.error || "フォルダの作成に失敗しました",
 					);
 				}
-				showSuccess("フォルダを作成しました。");
+				// showSuccess("フォルダを作成しました。");
 			}
 
 			// Reload data to reflect changes
@@ -627,7 +657,7 @@
 					parseInt(folderId),
 				);
 				if (response.success) {
-					showSuccess("フォルダをお気に入りから削除しました。");
+					// showSuccess("フォルダをお気に入りから削除しました。");
 					// お気に入りフォルダリストを更新
 					const favoritesResponse = await apiService.getFavorites();
 					if (favoritesResponse.success) {
@@ -852,6 +882,7 @@
 		onclose={handleCloseWorldDetails}
 		onaddToFolder={handleAddToFolderFromModal}
 		onremoveFromFolder={handleRemoveFromFolderFromModal}
+		onupdateWorld={handleUpdateWorld}
 	/>
 
 	<!-- Folder Modal -->
