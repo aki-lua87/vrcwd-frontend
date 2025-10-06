@@ -1,2 +1,14 @@
 [tools]
 bun = "1.2.22"
+
+[tasks.dev]
+description = "Run development server with hot reload"
+run="bun --bun run serve:dev"
+
+[tasks.build]
+description = "Build the project for production"
+run="bun --bun run build:prod"
+
+[tasks.deploy]
+description = "Build the project for production"
+run="bun --bun run deploy"

@@ -232,6 +232,13 @@ class ApiService {
     });
   }
 
+  async updateFolderOrder(folderOrders: Array<{folder_id: number, display_order: number}>): Promise<ApiResponse> {
+    return this.makeRequest('/v2/folders/order', {
+      method: 'PUT',
+      body: JSON.stringify({ folder_orders: folderOrders }),
+    });
+  }
+
   isAuthenticated(): boolean {
     return firebaseAuth.isAuthenticated();
   }

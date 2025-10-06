@@ -689,6 +689,32 @@
 		}
 	}
 
+	async function handleReorderFolders(data) {
+		const reorderedFolders = data.folders;
+
+		try {
+			// APIに送信するデータを作成
+			const folderOrders = reorderedFolders.map((folder, index) => ({
+				folder_id: parseInt(folder.id),
+				display_order: index + 1
+			}));
+
+			const response = await apiService.updateFolderOrder(folderOrders);
+
+			if (!response.success) {
+				throw new Error(response.error || 'フォルダの並べ替えに失敗しました');
+			}
+
+			// ローカルの状態を更新
+			folders = reorderedFolders;
+		} catch (err) {
+			console.error('Error reordering folders:', err);
+			showError('フォルダの並べ替えに失敗しました。');
+			// エラーが発生した場合、データを再読み込みして元の状態に戻す
+			await loadData();
+		}
+	}
+
 	// Initialize on mount
 	onMount(async () => {
 		// 初回認証状態チェック
@@ -749,6 +775,7 @@
 				oncreateFolder={handleCreateFolder}
 				oneditFolder={handleEditFolder}
 				ondeleteFolder={handleDeleteFolder}
+				onreorderFolders={handleReorderFolders}
 			/>
 
 			<FavoritesSidebar

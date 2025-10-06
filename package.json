@@ -3,11 +3,12 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "cp astro.config.dev.mjs astro.config.mjs && astro dev",
-    "build": "cp astro.config.prod.mjs astro.config.mjs && astro build",
-    "build:dev": "cp astro.config.dev.mjs astro.config.mjs && astro build",
+    "serve:dev": "cp .env.dev .env && cp astro.config.dev.mjs astro.config.mjs && astro dev",
+    "serve:prod": "cp .env.prod .env && cp astro.config.prod.mjs astro.config.mjs && astro dev",
+    "build:dev": "cp .env.dev .env && cp astro.config.dev.mjs astro.config.mjs && astro build",
+    "build:prod": "cp .env.prod .env && cp astro.config.prod.mjs astro.config.mjs && astro build",
     "astro": "astro",
-    "deploy": "pnpm run build && wrangler pages deploy dist --project-name=wwms"
+    "deploy": "cp .env.prod .env && pnpm run build:prod && wrangler pages deploy dist --project-name=wwms"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.1.0",
