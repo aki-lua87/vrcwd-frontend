@@ -1,4 +1,6 @@
 <script>
+	import { apiService } from '../lib/api-service';
+
 	export let isVisible = false;
 	export let worldData = null;
 	export let folders = [];
@@ -8,11 +10,14 @@
 	export let onclose = () => {};
 	export let onaddToFolder = () => {};
 	export let onremoveFromFolder = () => {};
+	export let onupdateWorld = () => {};
 
 	let selectedFolderId = "";
 	let folderComment = "";
 	let worldInFolders = new Set();
 	let addToFolderSuccess = false;
+	let isUpdatingWorld = false;
+	let updateSuccess = false;
 
 	function formatFolderId(folderId) {
 		if (!folderId || folderId === null || folderId === undefined) return "";
@@ -45,6 +50,7 @@
 	function closeModal() {
 		isVisible = false;
 		addToFolderSuccess = false;
+		updateSuccess = false;
 		onclose();
 	}
 
@@ -105,6 +111,35 @@
 			closeModal();
 		}
 	}
+
+	async function updateWorldInfo() {
+		if (!worldData?.world_id) return;
+
+		isUpdatingWorld = true;
+		updateSuccess = false;
+
+		try {
+			const result = await apiService.updateWorld(worldData.world_id);
+
+			if (result.success) {
+				// API成功後、親コンポーネントに更新を通知
+				await onupdateWorld(worldData.world_id);
+				updateSuccess = true;
+
+				// 成功状態を2秒間表示
+				setTimeout(() => {
+					updateSuccess = false;
+				}, 2000);
+			} else {
+				alert(`更新に失敗しました: ${result.error}`);
+			}
+		} catch (error) {
+			console.error('World update error:', error);
+			alert('更新中にエラーが発生しました。');
+		} finally {
+			isUpdatingWorld = false;
+		}
+	}
 </script>
 
 {#if isVisible && worldData}
@@ -140,6 +175,20 @@
 								on:click={openInVRChat}
 							>
 								🌐 VRChatで開く
+							</button>
+							<button
+								class="btn btn-secondary"
+								class:success={updateSuccess}
+								disabled={isUpdatingWorld}
+								on:click={updateWorldInfo}
+							>
+								{#if isUpdatingWorld}
+									⏳ 更新中...
+								{:else if updateSuccess}
+									✓ 更新完了
+								{:else}
+									🔄 ワールド情報更新
+								{/if}
 							</button>
 						</div>
 					</div>
@@ -313,6 +362,24 @@
 
 	.btn-primary:hover {
 		background: #764ba2;
+	}
+
+	.btn-secondary {
+		background: #28a745;
+		color: white;
+	}
+
+	.btn-secondary:hover {
+		background: #218838;
+	}
+
+	.btn-secondary:disabled {
+		background: #a8b2c7;
+		cursor: not-allowed;
+	}
+
+	.btn-secondary.success {
+		background: #28a745;
 	}
 
 	.btn-primary.success {

@@ -88,11 +88,36 @@ class ApiService {
     });
   }
 
-  async updateWorld(worldId: string, worldData: any): Promise<ApiResponse> {
-    return this.makeRequest(`/v2/worlds/${worldId}`, {
-      method: 'PUT',
-      body: JSON.stringify(worldData),
-    });
+  // ワールド情報更新（認証不要）
+  async updateWorld(worldId: string): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/v2/worlds/${worldId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('ワールドが見つかりません。');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        data,
+        message: 'ワールド情報を更新しました'
+      };
+    } catch (error: any) {
+      console.error('World update error:', error);
+      return {
+        success: false,
+        error: error.message || 'ワールド情報の更新に失敗しました'
+      };
+    }
   }
 
   async deleteWorld(worldId: string): Promise<ApiResponse> {
@@ -204,6 +229,13 @@ class ApiService {
   async removeFromFavorites(folderId: number): Promise<ApiResponse> {
     return this.makeRequest(`/v2/favorites/${folderId}`, {
       method: 'DELETE',
+    });
+  }
+
+  async updateFolderOrder(folderOrders: Array<{folder_id: number, display_order: number}>): Promise<ApiResponse> {
+    return this.makeRequest('/v2/folders/order', {
+      method: 'PUT',
+      body: JSON.stringify({ folder_orders: folderOrders }),
     });
   }
 
