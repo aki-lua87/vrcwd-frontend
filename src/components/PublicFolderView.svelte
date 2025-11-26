@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from "svelte";
+	import { onMount, tick } from "svelte";
 	import { firebaseAuth } from "../lib/firebase-auth";
 	import { apiService } from "../lib/api-service";
 	import WorldCard from "./WorldCard.svelte";
@@ -46,15 +46,22 @@
 	async function fetchFolderInfo(folderId) {
 		const response = await apiService.getPublicFolderInfo(folderId);
 		if (!response.success) {
-			throw new Error(response.error || "フォルダ情報の取得に失敗しました。");
+			throw new Error(
+				response.error || "フォルダ情報の取得に失敗しました。",
+			);
 		}
 		return response.data;
 	}
 
 	async function fetchPublicFolderItems(userId, folderId) {
-		const response = await apiService.getPublicFolderItems(userId, folderId);
+		const response = await apiService.getPublicFolderItems(
+			userId,
+			folderId,
+		);
 		if (!response.success) {
-			throw new Error(response.error || "フォルダアイテムの取得に失敗しました。");
+			throw new Error(
+				response.error || "フォルダアイテムの取得に失敗しました。",
+			);
 		}
 		return response.data;
 	}
@@ -145,11 +152,17 @@
 		}
 	}
 
-	function setCurrentPage(page) {
+	async function setCurrentPage(page) {
 		currentPage = Math.max(1, Math.min(page, totalPages));
 		updateCurrentPageData();
-		// Scroll to top of page
+
+		// Wait for DOM update
+		await tick();
+
+		// Scroll to top of page with multiple methods for robustness
 		window.scrollTo({ top: 0, behavior: "smooth" });
+		document.body.scrollTop = 0; // For Safari
+		document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
 	}
 
 	async function loadData() {
@@ -449,6 +462,32 @@
 				{/if}
 			</button>
 		</div>
+
+		<!-- Top Pagination -->
+		{#if totalPages > 1}
+			<div class="pagination top-pagination">
+				<button
+					class="btn btn-secondary"
+					on:click={previousPage}
+					disabled={currentPage <= 1}
+				>
+					← 前のページ
+				</button>
+
+				<div class="page-info">
+					{currentPage} / {totalPages} ページ (総 {totalCount}
+					件)
+				</div>
+
+				<button
+					class="btn btn-secondary"
+					on:click={nextPage}
+					disabled={currentPage >= totalPages}
+				>
+					次のページ →
+				</button>
+			</div>
+		{/if}
 
 		{#if worldsData.length === 0}
 			<div class="empty-message">

@@ -5,6 +5,10 @@ bun = "1.2.22"
 description = "Run development server with hot reload"
 run="bun --bun run serve:dev"
 
+[tasks.dev_prod]
+description = "Run development server with hot reload"
+run="bun --bun run serve:prod"
+
 [tasks.build]
 description = "Build the project for production"
 run="bun --bun run build:prod"
