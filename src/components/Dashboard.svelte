@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from "svelte";
+	import { onMount, tick } from "svelte";
 	import { firebaseAuth } from "../lib/firebase-auth";
 	import { apiService } from "../lib/api-service";
 	import SharedHeader from "./SharedHeader.svelte";
@@ -183,9 +183,17 @@
 		}
 	}
 
-	function setCurrentPage(page) {
+	async function setCurrentPage(page) {
 		currentPage = Math.max(1, Math.min(page, totalPages));
 		updateCurrentPageData();
+
+		// Wait for DOM update
+		await tick();
+
+		// Scroll to top of page with multiple methods for robustness
+		window.scrollTo({ top: 0, behavior: "smooth" });
+		document.body.scrollTop = 0; // For Safari
+		document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
 	}
 
 	function resetPagination() {
@@ -696,20 +704,22 @@
 			// APIに送信するデータを作成
 			const folderOrders = reorderedFolders.map((folder, index) => ({
 				folder_id: parseInt(folder.id),
-				display_order: index + 1
+				display_order: index + 1,
 			}));
 
 			const response = await apiService.updateFolderOrder(folderOrders);
 
 			if (!response.success) {
-				throw new Error(response.error || 'フォルダの並べ替えに失敗しました');
+				throw new Error(
+					response.error || "フォルダの並べ替えに失敗しました",
+				);
 			}
 
 			// ローカルの状態を更新
 			folders = reorderedFolders;
 		} catch (err) {
-			console.error('Error reordering folders:', err);
-			showError('フォルダの並べ替えに失敗しました。');
+			console.error("Error reordering folders:", err);
+			showError("フォルダの並べ替えに失敗しました。");
 			// エラーが発生した場合、データを再読み込みして元の状態に戻す
 			await loadData();
 		}
@@ -876,6 +886,18 @@
 									>
 								{/if}
 							</button>
+						</div>
+					{/if}
+
+					<!-- Top Pagination -->
+					{#if totalPages > 1}
+						<div class="top-pagination-wrapper">
+							<Pagination
+								{currentPage}
+								{totalPages}
+								{totalCount}
+								onpageChange={handlePageChange}
+							/>
 						</div>
 					{/if}
 
@@ -1207,5 +1229,11 @@
 			overflow-y: visible;
 			gap: 1rem;
 		}
+	}
+
+	.top-pagination-wrapper :global(.pagination) {
+		margin-top: 0;
+		padding-top: 0;
+		padding-bottom: 1rem;
 	}
 </style>
