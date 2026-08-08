@@ -100,7 +100,7 @@
   {:else}
     <div class="login-form">
       <h2>ログイン</h2>
-      <p>Googleアカウントでログインしてください</p>
+      <p>本システムではユーザ管理にGoogleのシングルサインオン機能を利用しております。Googleアカウントでログインしてください。</p>
       
       {#if error}
         <div class="error-message">

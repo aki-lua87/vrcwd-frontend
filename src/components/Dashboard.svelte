@@ -31,6 +31,17 @@
 	let clearSearchFlag = false;
 	let favoritesFolders = [];
 
+	// Mobile sidebar drawer state
+	let sidebarOpen = false;
+
+	function openSidebar() {
+		sidebarOpen = true;
+	}
+
+	function closeSidebar() {
+		sidebarOpen = false;
+	}
+
 	// Sorting state
 	let sortBy = "addition_at"; // 'world_name' or 'addition_at'
 	let sortOrder = "desc"; // 'asc' or 'desc'
@@ -332,11 +343,13 @@
 		const folderId = data.folderId;
 		const folder = folders.find((f) => f.id == folderId);
 		currentFolder = folder;
+		closeSidebar();
 		loadWorldsForCurrentFolder();
 	}
 
 	async function handleSelectFavoriteFolder(data) {
 		const { folderId, userId: ownerId } = data;
+		closeSidebar();
 		// お気に入りフォルダの内容を取得してダッシュボードに表示
 		try {
 			loading = true;
@@ -776,8 +789,35 @@
 		onremoveFromFavorites={handleRemoveFromFavorites}
 	/>
 
+	<!-- Mobile menu toggle button -->
+	<button
+		class="mobile-menu-toggle"
+		on:click={openSidebar}
+		aria-label="フォルダメニューを開く"
+	>
+		<span class="menu-icon">☰</span>
+		<span>メニュー</span>
+	</button>
+
 	<div class="main-container">
-		<div class="sidebar-container">
+		<!-- Mobile drawer overlay -->
+		{#if sidebarOpen}
+			<button
+				class="sidebar-overlay"
+				on:click={closeSidebar}
+				aria-label="メニューを閉じる"
+			></button>
+		{/if}
+
+		<div class="sidebar-container" class:open={sidebarOpen}>
+			<button
+				class="sidebar-close-btn"
+				on:click={closeSidebar}
+				aria-label="メニューを閉じる"
+			>
+				✕ 閉じる
+			</button>
+
 			<FolderSidebar
 				{folders}
 				{currentFolder}
@@ -993,6 +1033,20 @@
 	.main-content {
 		flex: 1;
 		min-width: 0;
+	}
+
+	/* Mobile menu toggle button (hidden on desktop) */
+	.mobile-menu-toggle {
+		display: none;
+	}
+
+	/* Sidebar overlay / close button (hidden on desktop) */
+	.sidebar-overlay {
+		display: none;
+	}
+
+	.sidebar-close-btn {
+		display: none;
 	}
 
 	.loading {
@@ -1221,13 +1275,102 @@
 			padding: 1rem 0.5rem;
 		}
 
-		.sidebar-container {
-			min-width: unset;
+		/* Show the menu toggle button */
+		.mobile-menu-toggle {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			margin: 0 0.5rem 0.5rem;
+			padding: 0.6rem 1.2rem;
+			background: #667eea;
+			color: white;
+			border: none;
+			border-radius: 8px;
+			font-size: 0.95rem;
+			font-weight: 600;
+			cursor: pointer;
+			box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+			transition: background 0.2s ease;
+		}
+
+		.mobile-menu-toggle:hover,
+		.mobile-menu-toggle:active {
+			background: #5a67d8;
+		}
+
+		.mobile-menu-toggle .menu-icon {
+			font-size: 1.2rem;
+			line-height: 1;
+		}
+
+		/* Overlay behind the drawer */
+		.sidebar-overlay {
+			display: block;
+			position: fixed;
+			inset: 0;
 			width: 100%;
-			position: static;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.5);
+			border: none;
+			padding: 0;
+			margin: 0;
+			cursor: pointer;
+			z-index: 1000;
+			animation: fadeIn 0.2s ease-out;
+		}
+
+		/* Sidebar becomes a left slide-in drawer */
+		.sidebar-container {
+			position: fixed;
+			top: 0;
+			left: 0;
+			bottom: 0;
+			min-width: unset;
+			width: 85%;
+			max-width: 320px;
 			max-height: none;
-			overflow-y: visible;
+			padding: 1rem;
 			gap: 1rem;
+			background: #f5f7fa;
+			box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
+			overflow-y: auto;
+			transform: translateX(-100%);
+			transition: transform 0.3s ease;
+			z-index: 1001;
+		}
+
+		.sidebar-container.open {
+			transform: translateX(0);
+		}
+
+		/* Close button inside the drawer */
+		.sidebar-close-btn {
+			display: block;
+			width: 100%;
+			padding: 0.6rem 1rem;
+			background: white;
+			color: #666;
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			font-size: 0.9rem;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+
+		.sidebar-close-btn:hover,
+		.sidebar-close-btn:active {
+			background: #f0f0f0;
+			color: #333;
+		}
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
 		}
 	}
 
