@@ -189,13 +189,40 @@
 	}
 
 	@media (max-width: 768px) {
+		/* Web版同様、カウントを検索の左に横並びで表示（コンパクト化） */
 		.stats-container {
-			flex-direction: column;
-			gap: 1rem;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			align-items: stretch;
+			gap: 0.75rem;
+			margin-bottom: 1rem;
 		}
 
 		.stats-right {
-			min-width: unset;
+			min-width: 0;
+		}
+
+		.stat-card {
+			min-width: 0;
+			padding: 0.75rem 0.9rem;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.stat-number {
+			font-size: 1.5rem;
+			margin-bottom: 0.1rem;
+		}
+
+		.stat-label {
+			font-size: 0.7rem;
+			white-space: nowrap;
+		}
+
+		.search-container {
+			padding: 0.75rem;
 		}
 	}
 </style>

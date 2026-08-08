@@ -768,6 +768,48 @@
 			}
 		});
 
+		// --- スワイプでサイドバードロワーを開閉 ---
+		// 画面左端からの右スワイプで開く / ドロワー表示中の左スワイプで閉じる
+		const EDGE_ZONE = 30; // 画面左端から反応する幅(px)
+		const SWIPE_THRESHOLD = 60; // 開閉と判定する横移動量(px)
+		const MAX_VERTICAL = 60; // 縦移動がこれを超えたらスクロールとみなす(px)
+		let touchStartX = 0;
+		let touchStartY = 0;
+		let swipeTracking = false;
+
+		const handleTouchStart = (e) => {
+			if (e.touches.length !== 1) {
+				swipeTracking = false;
+				return;
+			}
+			const t = e.touches[0];
+			touchStartX = t.clientX;
+			touchStartY = t.clientY;
+			// 左端から始まる場合（開く）か、ドロワー表示中（閉じる）のみ追跡
+			swipeTracking = sidebarOpen || touchStartX <= EDGE_ZONE;
+		};
+
+		const handleTouchEnd = (e) => {
+			if (!swipeTracking) return;
+			swipeTracking = false;
+			const t = e.changedTouches[0];
+			const dx = t.clientX - touchStartX;
+			const dy = t.clientY - touchStartY;
+			// 縦方向の移動が大きい場合はスクロール操作とみなして無視
+			if (Math.abs(dy) > MAX_VERTICAL) return;
+
+			if (!sidebarOpen && touchStartX <= EDGE_ZONE && dx > SWIPE_THRESHOLD) {
+				openSidebar();
+			} else if (sidebarOpen && dx < -SWIPE_THRESHOLD) {
+				closeSidebar();
+			}
+		};
+
+		window.addEventListener("touchstart", handleTouchStart, {
+			passive: true,
+		});
+		window.addEventListener("touchend", handleTouchEnd, { passive: true });
+
 		try {
 			// データを読み込み
 			await loadData();
@@ -779,12 +821,14 @@
 		// Cleanup function
 		return () => {
 			unsubscribe();
+			window.removeEventListener("touchstart", handleTouchStart);
+			window.removeEventListener("touchend", handleTouchEnd);
 		};
 	});
 </script>
 
 <div class="dashboard">
-	<SharedHeader />
+	<SharedHeader showMenuButton={true} onmenuClick={openSidebar} />
 
 	<FolderTitle
 		{currentFolder}
@@ -794,16 +838,6 @@
 		onshareFolder={handleShareFolder}
 		onremoveFromFavorites={handleRemoveFromFavorites}
 	/>
-
-	<!-- Mobile menu toggle button -->
-	<button
-		class="mobile-menu-toggle"
-		on:click={openSidebar}
-		aria-label="フォルダメニューを開く"
-	>
-		<span class="menu-icon">☰</span>
-		<span>メニュー</span>
-	</button>
 
 	<div class="main-container">
 		<!-- Mobile drawer overlay -->
@@ -1041,11 +1075,6 @@
 		min-width: 0;
 	}
 
-	/* Mobile menu toggle button (hidden on desktop) */
-	.mobile-menu-toggle {
-		display: none;
-	}
-
 	/* Sidebar overlay / close button (hidden on desktop) */
 	.sidebar-overlay {
 		display: none;
@@ -1281,34 +1310,6 @@
 			padding: 1rem 0.5rem;
 		}
 
-		/* Show the menu toggle button */
-		.mobile-menu-toggle {
-			display: inline-flex;
-			align-items: center;
-			gap: 0.5rem;
-			margin: 0 0.5rem 0.5rem;
-			padding: 0.6rem 1.2rem;
-			background: #667eea;
-			color: white;
-			border: none;
-			border-radius: 8px;
-			font-size: 0.95rem;
-			font-weight: 600;
-			cursor: pointer;
-			box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
-			transition: background 0.2s ease;
-		}
-
-		.mobile-menu-toggle:hover,
-		.mobile-menu-toggle:active {
-			background: #5a67d8;
-		}
-
-		.mobile-menu-toggle .menu-icon {
-			font-size: 1.2rem;
-			line-height: 1;
-		}
-
 		/* Overlay behind the drawer */
 		.sidebar-overlay {
 			display: block;
@@ -1331,6 +1332,9 @@
 			top: 0;
 			left: 0;
 			bottom: 0;
+			/* フォルダが少なくても画面下まで伸ばす（ビューポート基準の高さを明示） */
+			height: 100vh;
+			height: 100dvh;
 			min-width: unset;
 			width: 85%;
 			max-width: 320px;
@@ -1340,6 +1344,8 @@
 			background: #f5f7fa;
 			box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
 			overflow-y: auto;
+			-webkit-overflow-scrolling: touch;
+			overscroll-behavior: contain;
 			transform: translateX(-100%);
 			transition: transform 0.3s ease;
 			z-index: 1001;
@@ -1347,6 +1353,12 @@
 
 		.sidebar-container.open {
 			transform: translateX(0);
+		}
+
+		/* flexの子要素が縮められて収まってしまうとスクロールが発生しないため、
+		   子要素を自然な高さのまま保ちコンテナ側でスクロールさせる */
+		.sidebar-container > :global(*) {
+			flex-shrink: 0;
 		}
 
 		/* Close button inside the drawer */

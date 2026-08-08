@@ -4,6 +4,10 @@
 	import { apiService } from "../lib/api-service";
 	import UserNameModal from "./UserNameModal.svelte";
 
+	// メニュー（サイドバードロワー）トグル用
+	export let showMenuButton = false;
+	export let onmenuClick = () => {};
+
 	let isLoggedIn = false;
 	let currentUserId = "";
 	let currentPath = "";
@@ -118,7 +122,18 @@
 
 <div class="header">
 	<div class="header-content">
-		<h1>VRC Worlds Dashboard</h1>
+		<div class="header-left">
+			{#if showMenuButton}
+				<button
+					class="menu-toggle-btn"
+					on:click={onmenuClick}
+					aria-label="メニューを開く"
+				>
+					☰
+				</button>
+			{/if}
+			<h1>VRC Worlds Dashboard</h1>
+		</div>
 		<div class="nav-info">
 			{#if isLoggedIn}
 				<span class="user-display">ユーザー: {displayUserName}</span>
@@ -166,9 +181,20 @@
 		align-items: center;
 	}
 
+	.header-left {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		min-width: 0;
+	}
+
 	.header h1 {
 		font-size: 1.5rem;
 		font-weight: 600;
+	}
+
+	.menu-toggle-btn {
+		display: none;
 	}
 
 	.nav-info {
@@ -200,20 +226,56 @@
 	/* スマートフォン向けスタイル */
 	@media (max-width: 768px) {
 		.header-content {
-			padding: 0 0.5rem;
+			padding: 0 0.75rem;
+			flex-wrap: wrap;
+			row-gap: 0.5rem;
+		}
+
+		/* タイトル行（ハンバーガー＋タイトル）を1行目に */
+		.header-left {
+			flex: 1 1 100%;
+			gap: 0.5rem;
 		}
 
 		.header h1 {
 			font-size: 1.2rem;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 
+		.menu-toggle-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 40px;
+			height: 40px;
+			flex-shrink: 0;
+			font-size: 1.4rem;
+			line-height: 1;
+			background: rgba(255, 255, 255, 0.2);
+			color: white;
+			border: 1px solid rgba(255, 255, 255, 0.35);
+			border-radius: 8px;
+			cursor: pointer;
+			transition: background-color 0.2s ease;
+		}
+
+		.menu-toggle-btn:active {
+			background: rgba(255, 255, 255, 0.35);
+		}
+
+		/* ナビ（ユーザー名・設定・ログアウト）を2行目に整列 */
 		.nav-info {
+			flex: 1 1 100%;
 			flex-wrap: wrap;
+			justify-content: flex-end;
 			gap: 0.5rem;
 		}
 
 		.user-display {
 			font-size: 0.8rem;
+			margin-right: auto;
 		}
 
 		.nav-btn {
