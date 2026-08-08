@@ -1,9 +1,13 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import cloudflare from '@astrojs/cloudflare';
 import svelte from '@astrojs/svelte';
 
-// Development configuration
+// Production configuration
 export default defineConfig({
-  output: 'static',
+  output: 'server',
+  adapter: cloudflare({
+    mode: 'directory'
+  }),
   integrations: [svelte()]
 });

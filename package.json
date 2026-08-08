@@ -8,12 +8,11 @@
     "build:dev": "cp .env.dev .env && cp astro.config.dev.mjs astro.config.mjs && astro build",
     "build:prod": "cp .env.prod .env && cp astro.config.prod.mjs astro.config.mjs && astro build",
     "astro": "astro",
-    "deploy": "cp .env.prod .env && pnpm run build:prod && wrangler pages deploy dist --project-name=wwms"
+    "deploy": "cp .env.prod .env && bun run build:prod && wrangler pages deploy dist --project-name=wwms"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.1.0",
     "@astrojs/svelte": "^7.1.0",
-    "@aws-sdk/client-cognito-identity-provider": "^3.835.0",
     "astro": "^5.10.1",
     "crypto-js": "^4.2.0",
     "firebase": "^11.10.0",
