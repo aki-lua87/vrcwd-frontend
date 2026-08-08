@@ -744,6 +744,12 @@
 		const currentUser = await firebaseAuth.getCurrentUser();
 
 		if (!currentUser) {
+			// Firebaseの認証状態が失われている場合、localStorageに残った
+			// 古いトークンを消してからリダイレクトする。
+			// これをしないとログインページが再びダッシュボードへ飛ばし、
+			// リダイレクトループになる（特にモバイルのSafari/ITP環境）。
+			localStorage.removeItem("firebase_id_token");
+			localStorage.removeItem("firebase_user");
 			// 認証されていない場合はログインページにリダイレクト（一度だけ）
 			window.location.href = "/";
 			return;
