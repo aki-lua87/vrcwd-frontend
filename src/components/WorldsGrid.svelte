@@ -39,4 +39,12 @@
 		color: #666;
 		grid-column: 1 / -1;
 	}
+
+	/* スマホは1カラム・余白を詰めて多く表示 */
+	@media (max-width: 768px) {
+		.worlds-grid {
+			grid-template-columns: 1fr;
+			gap: 0.75rem;
+		}
+	}
 </style>

@@ -1,6 +1,18 @@
 <script>
+	import { onMount } from "svelte";
+
 	export let folders = [];
 	export let currentFolder = null;
+
+	// モバイルではネイティブのドラッグがタッチスクロールを奪うため無効化する
+	let isMobile = false;
+	onMount(() => {
+		const mq = window.matchMedia("(max-width: 768px)");
+		isMobile = mq.matches;
+		const handler = (e) => (isMobile = e.matches);
+		mq.addEventListener("change", handler);
+		return () => mq.removeEventListener("change", handler);
+	});
 
 	// Svelte 5 event props
 	export let onselectFolder = () => {};
@@ -124,7 +136,8 @@
 				class:dragging={draggedIndex === index}
 				class:drop-before={dropTargetIndex === index && dropPosition === 'before'}
 				class:drop-after={dropTargetIndex === index && dropPosition === 'after'}
-				draggable="true"
+				class:mobile={isMobile}
+				draggable={!isMobile}
 				on:dragstart={(e) => handleDragStart(e, index)}
 				on:dragover={(e) => handleDragOver(e, index)}
 				on:dragleave={handleDragLeave}
@@ -280,6 +293,17 @@
 			width: 100%;
 			position: static;
 			margin: 0;
+		}
+
+		/* モバイルではドラッグ無効。タッチスクロールを優先し、
+		   並べ替え用ハンドルは非表示にする */
+		.folder-item {
+			cursor: pointer;
+			touch-action: pan-y;
+		}
+
+		.folder-item .drag-handle {
+			display: none;
 		}
 	}
 </style>
